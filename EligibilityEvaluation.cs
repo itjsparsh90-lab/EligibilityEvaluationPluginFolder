@@ -1,10 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using Microsoft.Xrm.Sdk;
+﻿using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Drawing.Drawing2D;
+using System.Globalization;
+using System.Linq;
+using System.Security;
+using System.Text;
+using System.Windows.Documents;
 
 namespace JsonWorkflowEngineRule
 {
@@ -18,6 +22,12 @@ namespace JsonWorkflowEngineRule
         private const string OUT_IsEligible = "iseligible";
         private const string OUT_ResultMessage = "resultmessage";
         private const string OUT_ResultJson = "resultJson";
+
+        //Batch Custom API
+        private const string IN_CaseBenefitLineItemIdsJson = "CaseBenefitLineItemIdsJson";
+        private const string OUT_BatchResultJson = "batchResultJson";
+
+
 
         #endregion
 
@@ -54,6 +64,12 @@ namespace JsonWorkflowEngineRule
         // BLI fields
         private const string FLD_BLI_RegardingCase = "mcg_regardingincident";
         private const string FLD_BLI_BenefitUniqId = "mcg_casebenefitplanlineitemid";
+        private const string FLD_BLI_EligibilityComments = "mcg_eligibilitycomments";
+        private const string FLD_BLI_EligibilityStatus = "mcg_eligibilitystatus";
+        private const int ELIG_STATUS_INELIGIBLE = 861450000;
+        private const int ELIG_STATUS_ELIGIBLE = 861450001;
+        private const int ELIG_STATUS_PENDING = 861450002;
+
 
 
         // Verified? is Choice
@@ -74,7 +90,7 @@ namespace JsonWorkflowEngineRule
         private const string FLD_BLI_CareServiceType = "mcg_careservicetype";
         private const string FLD_BLI_CareServiceLevel = "mcg_careservicelevel";
         private const string FLD_BLI_ServiceFrequency = "mcg_servicebenefitfrequency";
-        private const string FLD_BLI_BenefitId = "mcg_benefitid"; 
+        private const string FLD_BLI_BenefitId = "mcg_name";
 
 
         // Service Scheme fields
@@ -86,6 +102,8 @@ namespace JsonWorkflowEngineRule
         private const string FLD_CASE_IncidentId = "incidentid";
         private const string FLD_CASE_YearlyEligibleIncome = "mcg_yearlyeligibleincome";
         private const string FLD_CASE_YearlyHouseholdIncome = "mcg_yearlyhouseholdincome";
+        private const string FLD_BLI_ProgramSpecificDeductions = "mcg_programspecificdeductions";
+
 
         // Household fields
         private const string FLD_CH_Case = "mcg_case";
@@ -102,6 +120,8 @@ namespace JsonWorkflowEngineRule
         private const string FLD_CI_ApplicableIncome = "mcg_applicableincome"; // income applicable
         private const string FLD_CI_IncomeCategory = "mcg_incomecategory";
         private const string FLD_CI_IncomeSubCategory = "mcg_incomesubcategory";
+        private const string FLD_CI_Contact = "mcg_contact";
+        private const string FLD_CI_ContactIncome = "mcg_casecontactincome";
 
         // Expense uses same logical name for applicable flag (your update)
         private const string FLD_Common_Case = "mcg_case";
@@ -144,6 +164,48 @@ namespace JsonWorkflowEngineRule
         //Relationship role entity
         private const string FLD_RR_RRID = "mcg_relationshiproleid";
         private const string FLD_RR_Name = "mcg_name";
+
+        // ===== EICM Notes (mcg_eicmnotes) =====
+        private const string ENT_EICMNotes = "mcg_eicmnotes";
+        private const string FLD_NOTE_Type = "mcg_notetype";
+        private const string FLD_NOTE_Description = "mcg_notedescription";
+        private const string FLD_NOTE_CaseLookup = "mcg_incident";
+        private const string FLD_NOTE_Name = "mcg_name";
+        private const string FLD_NOTE_DescriptionText = "mcg_description";
+
+        // ===== Eligibility Data =====
+        private const string ENT_EligibilityData = "mcg_eligibilitydata";
+
+        private const string FLD_ED_ApplicationType = "mcg_applicationtype";
+        private const string FLD_ED_ServiceNameBenefitName = "mcg_servicenamebenefitname";
+        private const string FLD_ED_NetIncomeBeforeDeduction = "mcg_householdnetincomebeforededuction";
+        private const string FLD_ED_DeductionAmount = "mcg_deductionamount";
+        private const string FLD_ED_DeductionApplied = "mcg_deductionapplied";
+        private const string FLD_ED_NetIncomeAfterDeduction = "mcg_householdnetincomeafterdeduction";
+        private const string FLD_ED_ChildName = "mcg_childname";
+        private const string FLD_ED_HouseholdSize = "mcg_householdsize";
+        private const string FLD_ED_ChildAge = "mcg_childage";
+        private const string FLD_ED_ChildDisabledFlag = "mcg_childdisabledflag";
+        private const string FLD_ED_Citizenship = "mcg_citizenship";
+        private const string FLD_ED_County = "mcg_county";
+        private const string FLD_ED_CareLevel = "mcg_carelevel";
+        private const string FLD_ED_CareType = "mcg_caretype";
+        private const string FLD_ED_BenefitFrequency = "mcg_benefitfrequency";
+        private const string FLD_ED_EligibilityAmount = "mcg_eligibilityamount";
+        private const string FLD_ED_EligibilityStatus = "mcg_eligibilitystatus";
+        private const string FLD_ED_IncomeRange = "mcg_incomerange";
+        private const string FLD_ED_IneligibilityReason = "mcg_ineligibilityreason";
+        private const string FLD_ED_Verified = "mcg_verified";
+        private const string FLD_ED_NumberOfRelativeKids = "mcg_numberofrelativekids";
+        private const string FLD_ED_SelfEmployedSingleBothParents = "mcg_selfemployedsinglebothparents";
+        private const string FLD_ED_CaseId = "mcg_caseid";
+        private const string FLD_ED_BenefitId = "mcg_benefitid";
+        private const string FLD_ED_BLI_Lookup = "mcg_casebenefitlineitem";
+
+
+
+        // From your screenshot (Eligibility row highlighted)
+        private const int NOTE_TYPE_ELIGIBILITY = 861450003;
 
         //Enum Expense Type
         public enum CaseExpenseType
@@ -205,6 +267,12 @@ namespace JsonWorkflowEngineRule
         {
             public const string SpouseOrPartner = "Spouse/Partner";
             public const string DomesticPartner = "Domestic Partner";
+            public const string OtherParent = "Other Parent";
+            public const string Partner = "Partner";
+            // FIXED: separate relationship names
+            public const string RelativeChild = "Relative Child";
+            public const string GrandChild = "Grand Child";
+
         }
 
         //Static DocumentCategory Type
@@ -221,12 +289,16 @@ namespace JsonWorkflowEngineRule
             public const string W2 = "W-2";
             public const string Expense = "Expense";
             public const string ChildSupport = "Child Support";
+            public const string HospitalBill = "Hospital or Medical Bills";
+            public const string MedicationCosts = "Medication Costs";
+            public const string MedicalReceipts = "Other Medical Receipts";
+
         }
 
         // ===== WPA Rule #2: Contact Association fields =====
         private const string FLD_REL_Contact = "mcg_contactid";
         private const string FLD_REL_RelatedContact = "mcg_relatedcontactid";
-        private const string FLD_REL_RoleType = "mcg_relationshiproletype"; // lookup; we will use FormattedValues
+        private const string FLD_REL_RoleType = "mcg_relationshiproletype"; // lookup
         private const string FLD_REL_EndDate = "mcg_enddate";
         private const string FLD_REL_StateCode = "statecode";
 
@@ -247,6 +319,9 @@ namespace JsonWorkflowEngineRule
         private const string TOKEN_ParentsTotalActivityHours = "totalactivityhoursperweek";
         private const string TOKEN_ProofIdentityProvided = "proofidentityprovided";
         private const string TOKEN_MostRecentTaxReturnProvided = "mostrecenttaxreturnprovided";
+        private const string TOKEN_HasEnrollmentDocument = "hasenrollmentdocument";
+
+
 
 
         #endregion
@@ -279,7 +354,8 @@ namespace JsonWorkflowEngineRule
                     FLD_BLI_CareServiceType,
                     FLD_BLI_CareServiceLevel,
                     FLD_BLI_ServiceFrequency,
-                    FLD_BLI_BenefitId   
+                    FLD_BLI_BenefitId,
+                    FLD_BLI_EligibilityStatus
 
                 ));
 
@@ -329,6 +405,20 @@ namespace JsonWorkflowEngineRule
                 {
                     validationFailures.Add("Beneficiary (Recipient Contact) is missing on Benefit Line Item.");
                 }
+                else
+                {
+                    if (caseRef == null)
+                    {
+                        validationFailures.Add("Case is missing on Benefit Line Item, so activity validation cannot be performed.");
+                    }
+                    else
+                    {
+                        validationFailures.AddRange(
+                            ValidateWorkHoursNotEmptyForActivity(service, tracing, recipientRef.Id, caseRef.Id)
+                        );
+                    }
+
+                }
 
                 // -------- Load Case --------
                 Entity inc = null;
@@ -336,7 +426,7 @@ namespace JsonWorkflowEngineRule
 
                 if (caseRef != null)
                 {
-                    inc = service.Retrieve(ENT_Case, caseRef.Id, new ColumnSet(FLD_CASE_PrimaryContact, FLD_CASE_YearlyHouseholdIncome,FLD_CASE_YearlyEligibleIncome));
+                    inc = service.Retrieve(ENT_Case, caseRef.Id, new ColumnSet(FLD_CASE_PrimaryContact, FLD_CASE_YearlyHouseholdIncome, FLD_CASE_YearlyEligibleIncome));
                     primaryContactRef = inc.GetAttributeValue<EntityReference>(FLD_CASE_PrimaryContact);
                     if (primaryContactRef == null)
                         validationFailures.Add("Primary contact is missing on the Case.");
@@ -357,7 +447,7 @@ namespace JsonWorkflowEngineRule
                     {
                         ruleJson = scheme.GetAttributeValue<string>(FLD_SCHEME_RuleJson);
                         if (string.IsNullOrWhiteSpace(ruleJson))
-                            validationFailures.Add("Rule Definition JSON (mcg_ruledefinitionjson) is missing on the Service Scheme.");
+                            validationFailures.Add("No rule were created agaisnt this benefit.");
                     }
                 }
 
@@ -402,6 +492,7 @@ namespace JsonWorkflowEngineRule
                     {
                         validationFailures.Add(stateCcsMessage);
                     }
+
                 }
 
                 // -------- Stop if validations failed --------
@@ -420,6 +511,26 @@ namespace JsonWorkflowEngineRule
                         isEligible: false,
                         resultMessage: "Validation failed."
                     );
+
+                    TryUpdateEligibilityComments(service, tracing, bliId, isEligible: false, groupEvals: null, evalLines: null, validationFailures: validationFailures);
+
+
+                    TryCreateEligibilityNote(
+    service,
+    tracing,
+    bli,
+    caseRef,
+    benefitRef,
+    recipientRef,
+    isEligible: false,
+    resultMessage: "Validation failed",
+    validationFailures: validationFailures,
+    evalLines: null,
+    groupEvals: null,
+    summaryFacts: null
+);
+
+                   
 
                     return;
                 }
@@ -453,7 +564,7 @@ namespace JsonWorkflowEngineRule
                     // beneficiary is recipientRef (mcg_recipientcontact)
                     if (recipientRef != null)
                     {
-                        PopulateRule2Tokens_WpaActivity(service, tracing, recipientRef.Id, tokens, facts);
+                        PopulateRule2Tokens_WpaActivity(service, tracing, caseRef.Id, recipientRef.Id, tokens, facts);
                         // ===== Rule 3 token population (WPA Evidence Care Needed) is derived inside Rule2 (do not override here)
 
                         // ===== Rule 4 token population (Proof of Identity for all household members) =====
@@ -461,7 +572,7 @@ namespace JsonWorkflowEngineRule
                         PopulateRule4Tokens_ProofOfIdentity(service, tracing, caseRef.Id, household, tokens, facts);
 
                         // ===== Rule 5 token population (Proof of Residency) =====
-                        PopulateRule5Tokens_ProofOfResidency(service, tracing, caseRef.Id, tokens, facts);
+                        PopulateRule5Tokens_ProofOfResidency(service, tracing, caseRef.Id,household, tokens, facts);
 
                         // ===== Rule 6 token population (Most recent income tax return) =====
                         PopulateRule6Tokens_MostRecentIncomeTaxReturn(service, tracing, caseRef.Id, tokens, facts);
@@ -471,14 +582,24 @@ namespace JsonWorkflowEngineRule
 
                 var evalLines = new List<EvalLine>();
                 var groupEvals = new List<GroupEval>();
-                bool overall = EvaluateRuleDefinition(def, tokens, tracing, evalLines,groupEvals);
+                bool overall = EvaluateRuleDefinition(def, tokens, tracing, evalLines, groupEvals);
+
+                // ✅ Update Eligibility Status to "Eligible" when overall passes
+                if (overall)
+                {
+                    TrySetEligibilityStatusEligible(service, tracing, bliId, bli);
+                }
+                else
+                {
+                    TrySetEligibilityStatusInEligible(service, tracing, bliId, bli);
+                }
 
                 // Criteria summary per top-level rule group (Q1, Q2, ...)
                 var criteriaSummary = EvaluateTopLevelGroups(def, tokens, tracing);
 
                 // Parameters considered (Rule 1 only for now) - kept unchanged
                 var parametersConsidered = BuildParametersConsideredForRule1(tokens);
-                var householdSize = CountHouseHoldSize(service, tracing, caseRef.Id); 
+                var householdSize = CountHouseHoldSize(service, tracing, caseRef.Id);
                 var citizenship = "";
 
                 var summaryFacts = BuildEligibilitySummaryFacts(
@@ -507,6 +628,42 @@ namespace JsonWorkflowEngineRule
                     groupEvals: groupEvals,
                     summaryFacts: summaryFacts
                 );
+                
+
+                TryUpdateEligibilityComments(service, tracing, bliId, isEligible: overall, groupEvals: groupEvals, evalLines: evalLines, validationFailures: null);
+
+
+                TryCreateEligibilityNote(
+    service,
+    tracing,
+    bli,
+    caseRef,
+    benefitRef,
+    recipientRef,
+    isEligible: overall,
+    resultMessage: overall ? "Eligible" : "Not Eligible",
+    validationFailures: null,
+    evalLines: evalLines,
+    groupEvals: groupEvals,
+    summaryFacts: summaryFacts
+);
+
+                UpsertEligibilityData(
+    context,
+    service,
+    tracing,
+    bli,
+    caseRef,
+    inc,
+    benefitRef,
+    recipientRef,
+    overall,
+    groupEvals,
+    evalLines
+);
+
+
+
 
                 tracing.Trace("Eligibility evaluation completed.");
             }
@@ -566,6 +723,112 @@ namespace JsonWorkflowEngineRule
 
 
         #region ====== VALIDATIONS ======
+
+        private static int CountSelfEmployedIncomeRecords(IOrganizationService service, ITracingService tracing, Guid caseId)
+        {
+            const string ENT_CASEINCOME = "mcg_caseincome";
+            const string FLD_CASE = "mcg_case";
+            const string FLD_SELF = "mcg_selfemployed";
+            const string FLD_STATE = "statecode";
+
+            var qe = new QueryExpression(ENT_CASEINCOME)
+            {
+                ColumnSet = new ColumnSet(FLD_SELF),
+                Criteria = new FilterExpression(LogicalOperator.And),
+                TopCount = 5000
+            };
+
+            qe.Criteria.AddCondition(FLD_CASE, ConditionOperator.Equal, caseId);
+            qe.Criteria.AddCondition(FLD_STATE, ConditionOperator.Equal, 0);
+
+            var res = service.RetrieveMultiple(qe);
+            var count = res.Entities.Count(e => e.GetAttributeValue<bool?>(FLD_SELF) == true);
+
+            tracing.Trace($"Self employed record count = {count}");
+            return count;
+        }
+
+        private static decimal ApplyProgramSpecificDeductionsAndUpdateCase(
+            IOrganizationService svc,
+            ITracingService tracing,
+            Guid caseId,
+            Guid bliId,
+            out decimal totalDeductions,
+            out int relativeKidsCount,
+            out bool medicalDeductionApplied,
+            out int selfEmployedCount)
+        {
+            totalDeductions = 0m;
+            relativeKidsCount = 0;
+            medicalDeductionApplied = false;
+            selfEmployedCount = 0;
+
+            // Base incomes from Case
+            var inc = svc.Retrieve(
+                ENT_Case,
+                caseId,
+                new ColumnSet(FLD_CASE_YearlyEligibleIncome, FLD_CASE_YearlyHouseholdIncome)
+            );
+
+            var yearlyEligibleIncome = inc.GetAttributeValue<Money>(FLD_CASE_YearlyEligibleIncome)?.Value ?? 0m; // BASE for net
+            var yearlyHouseholdIncome = inc.GetAttributeValue<Money>(FLD_CASE_YearlyHouseholdIncome)?.Value ?? 0m; // GROSS for self-emp calc
+
+            // Deduction #1: $5000 per "Relative Child/Grand Child"
+            var relativeChildCount = GetActiveHouseholdCount(svc, tracing, caseId, CaseRelationShipLookup.RelativeChild).Count;
+            var grandChildCount =
+    GetActiveHouseholdCount(
+        svc,
+        tracing,
+        caseId,
+        CaseRelationShipLookup.GrandChild
+    ).Count;
+
+            relativeKidsCount =  relativeChildCount + grandChildCount;
+            var relativeKidsDeduction = relativeKidsCount * 5000m;
+
+            // Deduction #2: if medical bills total > 2500, deduct only 2500
+            var medicalTotal = CalculateMedicalExpense(svc, tracing, caseId);
+            var medicalDeduction = 0m;
+            if (medicalTotal > 2500m)
+            {
+                medicalDeductionApplied = true;
+                medicalDeduction = 2500m;
+            }
+
+            // Deduction #3: for EACH self-employed income row, deduct 30% of GROSS household income
+            selfEmployedCount = CountSelfEmployedIncomeRecords(svc, tracing, caseId);
+            var selfEmpDeduction = (selfEmployedCount > 0 && yearlyHouseholdIncome > 0m)
+                ? (yearlyHouseholdIncome * 0.30m) * selfEmployedCount
+                : 0m;
+
+            totalDeductions = relativeKidsDeduction + medicalDeduction + selfEmpDeduction;
+
+            // Net after deductions (do not allow negative)
+            var netAfter = yearlyEligibleIncome - totalDeductions;
+            if (netAfter < 0m) netAfter = 0m;
+
+            tracing.Trace($"[Deductions] yearlyEligibleIncome={yearlyEligibleIncome}, yearlyHouseholdIncome={yearlyHouseholdIncome}");
+            tracing.Trace($"[Deductions] relativeKidsCount={relativeKidsCount}, relativeKidsDeduction={relativeKidsDeduction}");
+            tracing.Trace($"[Deductions] medicalTotal={medicalTotal}, medicalDeductionApplied={medicalDeductionApplied}, medicalDeduction={medicalDeduction}");
+            tracing.Trace($"[Deductions] selfEmployedCount={selfEmployedCount}, selfEmpDeduction={selfEmpDeduction}");
+            tracing.Trace($"[Deductions] totalDeductions={totalDeductions}, netAfter={netAfter}");
+
+            // Update Case.mcg_programspecificdeductions
+            try
+            {
+                var upd = new Entity(ENT_BenefitLineItem) { Id = bliId };
+                upd[FLD_BLI_ProgramSpecificDeductions] = new Money(totalDeductions);
+                svc.Update(upd);
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("WARNING: Failed to update mcg_programspecificdeductions: " + ex.Message);
+                // Non-blocking; do not fail eligibility for this.
+            }
+
+            return netAfter;
+        }
+
 
         private static bool HasAnyCaseIncome(IOrganizationService svc, ITracingService tracing, Guid caseId, CaseIncomeCatergory[] caseIncomeCategories, CaseIncomeSubCatergory[] caseIncomeSubCategories)
         {
@@ -676,8 +939,8 @@ namespace JsonWorkflowEngineRule
                 if (string.IsNullOrWhiteSpace(citizenship))
                     return "Child citizenship is missing on Birth Certificate document (mcg_childcitizenship).";
 
-                if (!string.Equals(citizenship, REQUIRED_CITIZENSHIP, StringComparison.OrdinalIgnoreCase))
-                    return $"Child citizenship does not match {REQUIRED_CITIZENSHIP} (Current: {citizenship}).";
+                //if (!string.Equals(citizenship, REQUIRED_CITIZENSHIP, StringComparison.OrdinalIgnoreCase))
+                //    return $"Child citizenship does not match {REQUIRED_CITIZENSHIP} (Current: {citizenship}).";
 
                 tracing.Trace($"PASS: Child citizenship validated from document. Citizenship='{citizenship}'.");
                 return null;
@@ -748,9 +1011,9 @@ namespace JsonWorkflowEngineRule
                 Entity contact = svc.Retrieve(
                     ENT_ContactTableName,
                     primaryContactRef.Id,
-                    new ColumnSet(FLD_Con_MaritalStatus,FLD_Con_ContactID));
+                    new ColumnSet(FLD_Con_MaritalStatus, FLD_Con_ContactID));
 
-                
+
 
                 OptionSetValue maritalStatusValue =
                     contact.GetAttributeValue<OptionSetValue>(FLD_Con_MaritalStatus);
@@ -768,6 +1031,83 @@ namespace JsonWorkflowEngineRule
 
             tracing.Trace("CheckMaritalStatusAllowedFromCase method end");
             return isMaritalStatus;
+        }
+
+        private List<string> ValidateWorkHoursNotEmptyForActivity (IOrganizationService svc,ITracingService tracing, Guid beneficiaryContactId, Guid caseId)
+        {
+            var failures = new List<string>();
+            
+            var parentIds = GetActiveParentsForBeneficiary(svc,tracing, beneficiaryContactId);   
+
+            if (parentIds == null || parentIds.Count == 0)
+            {
+                tracing.Trace("No active parents found for beneficiary.");
+                return failures;
+            }
+            foreach (var parentId in parentIds)
+            {
+                var parentName = TryGetContactFullName(svc, tracing, parentId) ?? parentId.ToString();
+                // 1) Get applicable Case Income rows for this Case + Parent
+                var ciQ = new QueryExpression(ENT_CaseIncome)
+                {
+                    ColumnSet = new ColumnSet(FLD_CI_ContactIncome),
+                    TopCount = 500
+                };
+                ciQ.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
+                ciQ.Criteria.AddCondition(FLD_CI_Case, ConditionOperator.Equal, caseId);
+                ciQ.Criteria.AddCondition(FLD_CI_Contact, ConditionOperator.Equal, parentId);
+                ciQ.Criteria.AddCondition(FLD_CI_ApplicableIncome, ConditionOperator.Equal, true);
+
+                var caseIncomeRows = svc.RetrieveMultiple(ciQ).Entities;
+
+                // 2) Extract income ids from mcg_contactincome lookup
+                var incomeIds = caseIncomeRows
+                    .Select(x => x.GetAttributeValue<EntityReference>(FLD_CI_ContactIncome))
+                    .Where(r => r != null)
+                    .Select(r => r.Id)
+                    .Distinct()
+                    .ToList();
+
+                // 3) Only validate workhours if we actually have mapped applicable income rows
+                if (incomeIds.Count > 0)
+                {
+                    var incQ = new QueryExpression(ENT_Income)
+                    {
+                        ColumnSet = new ColumnSet(FLD_INC_WorkHours),
+                        TopCount = 500
+                    };
+                    incQ.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
+                    incQ.Criteria.AddCondition("mcg_incomeid", ConditionOperator.In, incomeIds.Cast<object>().ToArray());
+
+                    var incomeRows = svc.RetrieveMultiple(incQ).Entities;
+
+                    bool hasMissingWorkHours = incomeRows.Any(r =>
+                        !r.Attributes.Contains(FLD_INC_WorkHours) || r[FLD_INC_WorkHours] == null);
+
+                    if (hasMissingWorkHours)
+                    {
+                        failures.Add($"Please add the employment hours per week in the Income Section.Missing Parent Name - {parentName}.");
+                    }
+                }
+
+                var eduQ = new QueryExpression(ENT_EducationDetails)
+                {
+                    ColumnSet = new ColumnSet("mcg_educationdetailsid"),
+                    TopCount = 1
+                };
+
+                eduQ.Criteria.AddCondition("statecode",ConditionOperator.Equal,0);
+                eduQ.Criteria.AddCondition("mcg_contactid", ConditionOperator.Equal, parentId);
+                eduQ.Criteria.AddCondition("mcg_workhours", ConditionOperator.Null);
+
+                var eduMissing = svc.RetrieveMultiple(eduQ).Entities.Any();
+                if(eduMissing)
+                {
+                    failures.Add($"Please add the education/certificate hours in Educational details section.Missing Parent Name - {parentName}.");
+                }
+            }
+
+            return failures;
         }
 
         private static List<Entity> CheckCaseInvolvedParties(IOrganizationService svc, ITracingService tracing, Guid caseId, InvolvedPartiesRelationship[] caseRelationship)
@@ -814,7 +1154,7 @@ namespace JsonWorkflowEngineRule
 
             qe.Criteria.AddCondition(FLD_DOC_Case, ConditionOperator.Equal, caseId);
 
-            // ✅ FIX: Only filter by contact when contactId is provided
+            // ? FIX: Only filter by contact when contactId is provided
             if (contactId.HasValue && contactId.Value != Guid.Empty)
             {
                 qe.Criteria.AddCondition(FLD_DOC_Contact, ConditionOperator.Equal, contactId.Value);
@@ -833,6 +1173,144 @@ namespace JsonWorkflowEngineRule
             var contactText = (contactId.HasValue && contactId.Value != Guid.Empty) ? contactId.Value.ToString() : "ANY";
             tracing.Trace($"HasDocumentByCategorySubcategory(case={caseId}, contact={contactText}, {category}/{subCategory}) = {found}");
             return found;
+        }
+
+        private static string GetCitizenshipFromBirthCertificate(
+    IOrganizationService svc,
+    ITracingService tracing,
+    Guid beneficiaryContactId)
+        {
+            try
+            {
+                var qe = new QueryExpression(ENT_UploadDocument)
+                {
+                    ColumnSet = new ColumnSet("createdon", FLD_DOC_ChildCitizenship),
+                    TopCount = 1
+                };
+
+                qe.Criteria.AddCondition(FLD_DOC_Contact, ConditionOperator.Equal, beneficiaryContactId);
+                qe.Criteria.AddCondition(FLD_DOC_Category, ConditionOperator.Equal, "Verifications");
+                qe.Criteria.AddCondition(FLD_DOC_SubCategory, ConditionOperator.Equal, "Birth Certificate");
+                qe.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
+
+                qe.Orders.Add(new OrderExpression("createdon", OrderType.Descending));
+
+                var doc = svc.RetrieveMultiple(qe).Entities.FirstOrDefault();
+                if (doc == null)
+                {
+                    tracing.Trace("[Citizenship] No Birth Certificate doc found.");
+                    return "";
+                }
+
+                var citizenship = (doc.GetAttributeValue<string>(FLD_DOC_ChildCitizenship) ?? "").Trim();
+                tracing.Trace($"[Citizenship] mcg_childcitizenship='{citizenship}'");
+                return citizenship;
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("[Citizenship] GetCitizenshipFromBirthCertificate failed: " + ex);
+                return "";
+            }
+        }
+
+
+        private static string GetCountyFromCaseAddress(
+    IOrganizationService svc,
+    ITracingService tracing,
+    Guid caseId)
+        {
+            try
+            {
+                // mcg_caseaddress fields
+                const string FLD_Case = "mcg_case";
+                const string FLD_EndDate = "mcg_enddate";
+                const string FLD_AddressLookup = "mcg_address";
+
+                // mcg_address fields
+                const string ENT_Address = "mcg_address";
+                const string FLD_CountyText = "mcg_countytext";
+
+                var qe = new QueryExpression(ENT_CaseAddress)
+                {
+                    ColumnSet = new ColumnSet(FLD_EndDate, FLD_AddressLookup),
+                    TopCount = 50
+                };
+
+                qe.Criteria.AddCondition(FLD_Case, ConditionOperator.Equal, caseId);
+
+                var rows = svc.RetrieveMultiple(qe).Entities;
+                if (rows == null || rows.Count == 0)
+                {
+                    tracing.Trace("[County] No mcg_caseaddress found.");
+                    return "";
+                }
+
+                var today = DateTime.UtcNow.Date;
+
+                // pick active address: end null OR end >= today
+                var active = rows
+                    .OrderByDescending(r => r.GetAttributeValue<DateTime?>("createdon") ?? DateTime.MinValue)
+                    .FirstOrDefault(r =>
+                    {
+                        var end = r.GetAttributeValue<DateTime?>(FLD_EndDate);
+                        return !end.HasValue || end.Value.Date >= today;
+                    });
+
+                if (active == null)
+                {
+                    tracing.Trace("[County] No ACTIVE mcg_caseaddress found (enddate null/future).");
+                    return "";
+                }
+
+                var addrRef = active.GetAttributeValue<EntityReference>(FLD_AddressLookup);
+                if (addrRef == null || addrRef.Id == Guid.Empty)
+                {
+                    tracing.Trace("[County] mcg_caseaddress.mcg_address is null.");
+                    return "";
+                }
+
+                var addr = svc.Retrieve(ENT_Address, addrRef.Id, new ColumnSet(FLD_CountyText));
+                var county = (addr.GetAttributeValue<string>(FLD_CountyText) ?? "").Trim();
+
+                tracing.Trace($"[County] County='{county}' from mcg_address.mcg_countytext");
+                return county;
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("[County] GetCountyFromCaseAddress failed: " + ex);
+                return "";
+            }
+        }
+
+        private static void TrySetEligibilityStatusInEligible(
+            IOrganizationService service,
+            ITracingService tracing,
+            Guid bliId,
+            Entity bliLoaded)
+        {
+            try
+            {
+                // Use already-loaded value if present
+                var current = bliLoaded?.GetAttributeValue<OptionSetValue>(FLD_BLI_EligibilityStatus)?.Value;
+
+                if (current.HasValue && current.Value == ELIG_STATUS_INELIGIBLE)
+                {
+                    tracing.Trace($"EligibilityStatus already Eligible for BLI {bliId}. No update needed.");
+                    return;
+                }
+
+                var upd = new Entity(ENT_BenefitLineItem, bliId);
+                upd[FLD_BLI_EligibilityStatus] = new OptionSetValue(ELIG_STATUS_INELIGIBLE);
+
+                service.Update(upd);
+
+                tracing.Trace($"Updated BLI {bliId} mcg_eligibilitystatus => InEligible ({ELIG_STATUS_INELIGIBLE}).");
+            }
+            catch (Exception ex)
+            {
+                // Don't fail eligibility evaluation just because status update failed
+                tracing.Trace("Failed to update mcg_eligibilitystatus to Eligible. " + ex);
+            }
         }
 
         private static bool HasVerifiedDocumentByCategoryAndAnySubcategory(
@@ -986,12 +1464,27 @@ namespace JsonWorkflowEngineRule
     IOrganizationService svc,
     ITracingService tracing,
     Guid caseId,
+    List<Guid> householdContactIds,
     Dictionary<string, object> tokens,
     Dictionary<string, object> facts)
         {
             try
             {
                 const string TOKEN_ProofResidencyProvidedLocal = "proofresidencyprovided";
+
+                // defaults
+                facts["docs.residency.householdCount"] = householdContactIds?.Count ?? 0;
+                facts["docs.residency.verifiedCount"] = 0;
+                facts["docs.residency.missingCount"] = 0;
+                facts["docs.residency.missingNames"] = "";
+                facts["docs.residency.hasActiveAddress"] = false;
+
+                // Safety: no household
+                if (householdContactIds == null || householdContactIds.Count == 0)
+                {
+                    tokens[TOKEN_ProofResidencyProvidedLocal] = false;
+                    return;
+                }
 
                 // 1) Case Address check (active = enddate null or future)
                 var qeAddr = new QueryExpression(ENT_CaseAddress)
@@ -1010,43 +1503,24 @@ namespace JsonWorkflowEngineRule
                     return !end.HasValue || end.Value.Date >= today;
                 });
 
-                facts["rule5.caseAddress.count"] = addresses.Count;
-                facts["rule5.caseAddress.hasActive"] = hasActiveAddress;
+                facts["docs.residency.hasActiveAddress"] = hasActiveAddress;
 
                 if (!hasActiveAddress)
                 {
+                    // Residency fails (no active address)
                     tokens[TOKEN_ProofResidencyProvidedLocal] = false;
-                    facts["rule5.docs.hasVerifiedResidencyDoc"] = false;
-                    facts["rule5.docs.matchedDocInfo"] = "";
                     tracing.Trace("[Rule5] No active case address => proofresidencyprovided=false");
                     return;
                 }
 
-                // 2) Supporting document (verified) for the CASE (any contact)
-                // Category/SubCategory are TEXT fields in your table.
-                // Verified is Yes/No (Two Options).
-                var qeDoc = new QueryExpression(ENT_UploadDocument)
+                // 2) Supporting residency doc (Verified) PER household member
+                // Keep the same doc logic you already had, but applied per contact
+                bool MatchesResidencyDoc(string cat, string sub)
                 {
-                    ColumnSet = new ColumnSet(FLD_DOC_Category, FLD_DOC_SubCategory, FLD_DOC_Verified, FLD_DOC_Contact),
-                    Criteria = new FilterExpression(LogicalOperator.And),
-                    TopCount = 200
-                };
+                    cat = (cat ?? "").Trim();
+                    sub = (sub ?? "").Trim();
 
-                qeDoc.Criteria.AddCondition(FLD_DOC_Case, ConditionOperator.Equal, caseId);
-                qeDoc.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
-                qeDoc.Criteria.AddCondition(FLD_DOC_Verified, ConditionOperator.Equal, true);
-
-                var docs = svc.RetrieveMultiple(qeDoc).Entities;
-
-                bool match = false;
-                string matchedInfo = "";
-
-                foreach (var d in docs)
-                {
-                    var cat = (d.GetAttributeValue<string>(FLD_DOC_Category) ?? "").Trim();
-                    var sub = (d.GetAttributeValue<string>(FLD_DOC_SubCategory) ?? "").Trim();
-
-                    bool ok =
+                    return
                         (cat.Equals("Identification", StringComparison.OrdinalIgnoreCase) &&
                          sub.Equals("Proof of Address", StringComparison.OrdinalIgnoreCase))
                         ||
@@ -1054,32 +1528,75 @@ namespace JsonWorkflowEngineRule
                          (sub.Equals("Driver’s License", StringComparison.OrdinalIgnoreCase) ||
                           sub.Equals("Driver's License", StringComparison.OrdinalIgnoreCase) ||
                           sub.Equals("Proof of Address", StringComparison.OrdinalIgnoreCase)));
-
-                    if (ok)
-                    {
-                        match = true;
-
-                        var cRef = d.GetAttributeValue<EntityReference>(FLD_DOC_Contact);
-                        var who = (cRef != null && cRef.Id != Guid.Empty) ? (TryGetContactFullName(svc, tracing, cRef.Id) ?? cRef.Id.ToString()) : "N/A";
-                        matchedInfo = $"{cat} / {sub} (Verified) - Contact: {who}";
-                        break;
-                    }
                 }
 
-                tokens[TOKEN_ProofResidencyProvidedLocal] = match;
-                facts["rule5.docs.hasVerifiedResidencyDoc"] = match;
-                facts["rule5.docs.matchedDocInfo"] = matchedInfo;
+                // Pull docs for this case + household contacts (Active only, Verified only)
+                var qeDoc = new QueryExpression(ENT_UploadDocument)
+                {
+                    ColumnSet = new ColumnSet(FLD_DOC_Contact, FLD_DOC_Category, FLD_DOC_SubCategory, FLD_DOC_Verified),
+                    Criteria = new FilterExpression(LogicalOperator.And),
+                    TopCount = 500
+                };
 
-                tracing.Trace($"[Rule5] proofresidencyprovided={match}; matchedDoc='{matchedInfo}'");
+                qeDoc.Criteria.AddCondition(FLD_DOC_Case, ConditionOperator.Equal, caseId);
+                qeDoc.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
+                qeDoc.Criteria.AddCondition(FLD_DOC_Verified, ConditionOperator.Equal, true);
+
+                qeDoc.Criteria.AddCondition(new ConditionExpression(
+                    FLD_DOC_Contact,
+                    ConditionOperator.In,
+                    householdContactIds.Cast<object>().ToArray()
+                ));
+
+                var docs = svc.RetrieveMultiple(qeDoc).Entities;
+
+                // per contact flag
+                var hasDoc = householdContactIds.ToDictionary(id => id, id => false);
+
+                foreach (var d in docs)
+                {
+                    var cRef = d.GetAttributeValue<EntityReference>(FLD_DOC_Contact);
+                    if (cRef == null || cRef.Id == Guid.Empty) continue;
+                    if (!hasDoc.ContainsKey(cRef.Id)) continue;
+
+                    var cat = d.GetAttributeValue<string>(FLD_DOC_Category);
+                    var sub = d.GetAttributeValue<string>(FLD_DOC_SubCategory);
+
+                    if (!MatchesResidencyDoc(cat, sub)) continue;
+
+                    hasDoc[cRef.Id] = true;
+                }
+
+                var missingIds = hasDoc.Where(x => !x.Value).Select(x => x.Key).ToList();
+                var missingNames = new List<string>();
+
+                foreach (var id in missingIds)
+                {
+                    var name = TryGetContactFullName(svc, tracing, id);
+                    missingNames.Add(string.IsNullOrWhiteSpace(name) ? id.ToString() : name);
+                }
+
+                bool allOk = missingIds.Count == 0;
+
+                tokens[TOKEN_ProofResidencyProvidedLocal] = allOk;
+
+                facts["docs.residency.householdCount"] = householdContactIds.Count;
+                facts["docs.residency.verifiedCount"] = householdContactIds.Count - missingIds.Count;
+                facts["docs.residency.missingCount"] = missingIds.Count;
+                facts["docs.residency.missingNames"] = string.Join(", ", missingNames);
+
+                tracing.Trace($"[Rule5] proofresidencyprovided={allOk}; household={householdContactIds.Count}; missing={missingIds.Count}; missingNames={facts["docs.residency.missingNames"]}");
             }
             catch (Exception ex)
             {
                 tracing.Trace("[Rule5] PopulateRule5Tokens_ProofOfResidency failed: " + ex);
                 tokens["proofresidencyprovided"] = false;
-                facts["rule5.docs.hasVerifiedResidencyDoc"] = false;
-                facts["rule5.docs.matchedDocInfo"] = "";
+                facts["docs.residency.missingNames"] = "";
+                facts["docs.residency.missingCount"] = 0;
+                facts["docs.residency.hasActiveAddress"] = false;
             }
         }
+
 
         private static void PopulateRule6Tokens_MostRecentIncomeTaxReturn(
     IOrganizationService svc,
@@ -1170,6 +1687,161 @@ namespace JsonWorkflowEngineRule
 
         #endregion
 
+        // ----------------------------
+        // Eligibility Comments (BLI)
+        // ----------------------------
+        private static void TryUpdateEligibilityComments(
+            IOrganizationService service,
+            ITracingService tracing,
+            Guid benefitLineItemId,
+            bool isEligible,
+            List<GroupEval> groupEvals,
+            List<EvalLine> evalLines,
+            List<string> validationFailures
+        )
+        {
+            try
+            {
+                string comments = string.Empty;
+
+                // If validations failed (no rule evaluation), store a compact message (optional).
+                if (validationFailures != null && validationFailures.Count > 0)
+                {
+                    comments = "Validation failed: " + string.Join("; ",
+                        validationFailures.Where(v => !string.IsNullOrWhiteSpace(v)).Take(5));
+                }
+                else if (!isEligible)
+                {
+                    comments = GetAllDenialReasonsText(groupEvals, evalLines);
+                }
+                else
+                {
+                    // Eligible: clear comments to avoid stale denial reasons.
+                    comments = string.Empty;
+                }
+
+                var upd = new Entity(ENT_BenefitLineItem, benefitLineItemId);
+                upd[FLD_BLI_EligibilityComments] = comments ?? string.Empty;
+                service.Update(upd);
+
+                tracing.Trace("EligibilityComments updated for BLI {0}. isEligible={1}. comments='{2}'",
+                    benefitLineItemId, isEligible, comments);
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("TryUpdateEligibilityComments FAILED (ignored): " + ex);
+            }
+        }
+
+        private void MarkHasEligibilityData(IOrganizationService svc, Guid bliId, ITracingService tracing)
+        {
+            try
+            {
+                var bli = new Entity("mcg_casebenefitplanlineitem", bliId);
+                bli["mcg_haseligibilitydata"] = true;
+                svc.Update(bli);
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("MarkHasEligibilityData FAILED (ignored): " + ex);
+                // ignore - do not block eligibility evaluation
+            }
+        }
+
+
+        private static string GetAllDenialReasonsText(List<GroupEval> groupEvals, List<EvalLine> evalLines)
+        {
+            // 1) Prefer configured denial reasons from ALL failed groups (top-down order).
+            try
+            {
+                var denialReasons = CollectDenialReasons(groupEvals ?? new List<GroupEval>());
+
+                // Preserve order, remove duplicates (case-insensitive)
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var all = new List<string>();
+
+                foreach (var dr in denialReasons)
+                {
+                    var r = (dr?.reason ?? "").Trim();
+                    if (string.IsNullOrWhiteSpace(r)) continue;
+
+                    if (seen.Add(r))
+                        all.Add(r);
+                }
+
+                if (all.Count > 0)
+                {
+                    var joined = string.Join(", ", all);
+
+                    // Safety trim (adjust if your field allows more)
+                    if (joined.Length > 4000) joined = joined.Substring(0, 4000);
+                    return joined;
+                }
+            }
+            catch
+            {
+                // ignore - fallback below
+            }
+
+            // 2) Fallback to first failed condition line (same behavior as before)
+            var firstFail = (evalLines ?? new List<EvalLine>()).FirstOrDefault(l => l != null && !l.pass);
+            if (firstFail != null)
+            {
+                var label = string.IsNullOrWhiteSpace(firstFail.label) ? "Eligibility criteria" : firstFail.label.Trim();
+                var expected = FormatValueForComment(firstFail.expected);
+                var actual = FormatValueForComment(firstFail.actual);
+
+                if (!string.IsNullOrWhiteSpace(expected) || !string.IsNullOrWhiteSpace(actual))
+                    return $"{label} (Expected: {expected}; Current: {actual})";
+
+                return label;
+            }
+
+            return "Eligibility criteria failed.";
+        }
+
+
+        private static string GetPrimaryDenialReasonText(List<GroupEval> groupEvals, List<EvalLine> evalLines)
+        {
+            // 1) Prefer configured denial reason from first failed group (top-down order).
+            try
+            {
+                var denialReasons = CollectDenialReasons(groupEvals);
+                var primary = (denialReasons != null) ? denialReasons.FirstOrDefault() : null;
+                if (primary != null && !string.IsNullOrWhiteSpace(primary.reason))
+                {
+                    return primary.reason.Trim();
+                }
+            }
+            catch { /* ignore */ }
+
+            // 2) Fallback to first failed condition line.
+            var firstFail = (evalLines ?? new List<EvalLine>()).FirstOrDefault(l => l != null && !l.pass);
+            if (firstFail != null)
+            {
+                var label = string.IsNullOrWhiteSpace(firstFail.label) ? "Eligibility criteria" : firstFail.label.Trim();
+                var expected = FormatValueForComment(firstFail.expected);
+                var actual = FormatValueForComment(firstFail.actual);
+
+                if (!string.IsNullOrWhiteSpace(expected) || !string.IsNullOrWhiteSpace(actual))
+                    return $"{label} (Expected: {expected}; Current: {actual})";
+
+                return label;
+            }
+
+            return "Eligibility criteria failed.";
+        }
+
+        private static string FormatValueForComment(object val)
+        {
+            if (val == null) return "";
+            if (val is bool b) return b ? "Yes" : "No";
+            if (val is Money m) return m.Value.ToString("0.##", CultureInfo.InvariantCulture);
+            if (val is DateTime dt) return dt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            return val.ToString();
+        }
+
+
         #region ====== Rule 1 token population (Income + Expense only) ======
 
         private static void PopulateRule1Tokens(IOrganizationService svc, ITracingService tracing, Guid caseId, Dictionary<string, object> tokens)
@@ -1253,15 +1925,48 @@ namespace JsonWorkflowEngineRule
         //Rule 7 token population (State CCS Eibility)
         private static void PopulateRule7Tokens(IPluginExecutionContext context, IOrganizationService svc, ITracingService tracing, Guid caseId, Dictionary<string, object> tokens)
         {
-            tracing.Trace($"PopulateRule2Tokens Method is called");
-            tokens["yearlyincome"] = YearlyHouseHoldIncome(svc, tracing, caseId);
-            tokens["householdsizeadjusted"] = CountHouseHoldSize(svc, tracing, caseId);
-            tokens["incomewithinrange"] = HasCheckEligibleIncomeRange(context, svc, tracing, caseId);
-            //tokens["incomebelowminc"] = HasCheckBelowMinIncome(svc, tracing, caseId);
+            tracing.Trace("PopulateRule7Tokens Method is called (with program specific deductions)");
 
-            tracing.Trace($"Rule7 Tokens => yearlyincome={tokens["yearlyincome"]}, householdsizeadjusted={tokens["householdsizeadjusted"]}, , incomewithinrange={tokens["incomewithinrange"]}");
-            tracing.Trace($"PopulateRule2Tokens Method is end");
+            var bliId = GetGuidFromInput(context, IN_CaseBenefitLineItemId);
+
+            var netAfter = ApplyProgramSpecificDeductionsAndUpdateCase(
+                svc,
+                tracing,
+                caseId,
+                bliId,
+                out var totalDeductions,
+                out var relativeKidsCount,
+                out var medicalDeductionApplied,
+                out var selfEmployedCount
+            );
+
+            tokens["yearlyincome"] = netAfter;
+            tokens["householdsizeadjusted"] = CountHouseHoldSize(svc, tracing, caseId);
+
+            // Compare netAfter (NOT mcg_yearlyhouseholdincome)
+            //var bliId = GetGuidFromInput(context, IN_CaseBenefitLineItemId);
+
+            decimal minIncome;
+            bool incomeOk = IsIncomeBelowMinForStateCcs(svc, tracing, caseId, bliId, netAfter, out minIncome);
+
+            bool paystubPresent, w2Present;
+            bool docOk = HasIncomeDocForStateCcs(svc, tracing, caseId, out paystubPresent, out w2Present);
+
+            // New tokens (use these in rule JSON so UI shows both reasons)
+            tokens["incomerangematched"] = incomeOk;        // income below threshold
+            tokens["hasincomedocument"] = docOk;          // paystub OR W2 present
+
+            // Optional: expose details if you want to show “Current: …” nicely
+            tokens["incomerange_min"] = minIncome;
+            tokens["income_paystub_present"] = paystubPresent;
+            tokens["income_w2_present"] = w2Present;
+
+            // Backward compatibility: keep old token but make it explicit
+            tokens["incomewithinrange"] = incomeOk && docOk;
+
+
         }
+
 
         private static decimal YearlyHouseHoldIncome(IOrganizationService svc, ITracingService tracing, Guid caseId)
         {
@@ -1303,12 +2008,124 @@ namespace JsonWorkflowEngineRule
             return houseHoldSize.Count;
         }
 
-        private static bool HasCheckEligibleIncomeRange(IPluginExecutionContext context, IOrganizationService svc, ITracingService tracing, Guid caseId)
+        private static bool IsIncomeBelowMinForStateCcs(
+    IOrganizationService svc,
+    ITracingService tracing,
+    Guid caseId,
+    Guid bliId,
+    decimal incomeToCheck,
+    out decimal minIncomeUsed)
+        {
+            minIncomeUsed = 0m;
+
+            try
+            {
+                var householdSize = (int)CountHouseHoldSize(svc, tracing, caseId);
+
+                var bli = svc.Retrieve(ENT_BenefitLineItem, bliId, new ColumnSet(FLD_BLI_Benefit));
+                var benefitRef = bli.GetAttributeValue<EntityReference>(FLD_BLI_Benefit);
+
+                if (benefitRef == null || string.IsNullOrWhiteSpace(benefitRef.Name))
+                {
+                    tracing.Trace("[Rule7] Benefit name missing.");
+                    return false;
+                }
+
+                var serviceBenefitName = benefitRef.Name.Trim();
+
+                // Eligibility Admin by name
+                var eaQuery = new QueryExpression(ENT_EligibilityAdmin)
+                {
+                    ColumnSet = new ColumnSet(FLD_EA_Name),
+                    TopCount = 1
+                };
+                eaQuery.Criteria.AddCondition(FLD_EA_Name, ConditionOperator.Equal, serviceBenefitName);
+
+                var admin = svc.RetrieveMultiple(eaQuery).Entities.FirstOrDefault();
+                if (admin == null)
+                {
+                    tracing.Trace($"[Rule7] No Eligibility Admin found for '{serviceBenefitName}'.");
+                    return false;
+                }
+
+                // Income range records for subsidy 'c'
+                var rangeQuery = new QueryExpression(ENT_EligibilityIncomeRange)
+                {
+                    ColumnSet = new ColumnSet(FLD_EIR_HouseHoldSize, FLD_EIR_MinIncome, ENT_SubsidyTableName),
+                    TopCount = 5000
+                };
+                rangeQuery.Criteria.AddCondition(FLD_EIR_EligibilityAdmin, ConditionOperator.Equal, admin.Id);
+                rangeQuery.Criteria.AddCondition(ENT_SubsidyTableName, ConditionOperator.Equal, "c");
+
+                var ranges = svc.RetrieveMultiple(rangeQuery).Entities;
+
+                var matched = ranges
+                    .Where(r =>
+                        r.GetAttributeValue<int?>(FLD_EIR_HouseHoldSize) == householdSize &&
+                        string.Equals((r.GetAttributeValue<string>(ENT_SubsidyTableName) ?? "").Trim(), "c", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (!matched.Any())
+                {
+                    tracing.Trace($"[Rule7] No income range matched for HouseholdSize={householdSize} (subsidy=c).");
+                    return false;
+                }
+
+                // Usually one record exists; if multiple, use the smallest minIncome (safest)
+                minIncomeUsed = matched
+                    .Select(r => r.GetAttributeValue<Money>(FLD_EIR_MinIncome)?.Value ?? 0m)
+                    .DefaultIfEmpty(0m)
+                    .Min();
+
+                bool incomeOk = incomeToCheck < minIncomeUsed;
+
+                tracing.Trace($"[Rule7] IncomeCheck: income={incomeToCheck}, min={minIncomeUsed}, pass={incomeOk}");
+                return incomeOk;
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("[Rule7] IsIncomeBelowMinForStateCcs ERROR: " + ex);
+                return false;
+            }
+        }
+
+        private static bool HasIncomeDocForStateCcs(
+            IOrganizationService svc,
+            ITracingService tracing,
+            Guid caseId,
+            out bool paystubPresent,
+            out bool w2Present)
+        {
+            paystubPresent = false;
+            w2Present = false;
+
+            try
+            {
+                // same logic as your single plugin intent: Paystub OR W2 is enough
+                paystubPresent = HasDocumentByCategorySubcategory(svc, tracing, caseId, null, DocumentCategory.Income, DocumentSubCategory.Paystub);
+                w2Present = HasDocumentByCategorySubcategory(svc, tracing, caseId, null, DocumentCategory.Income, DocumentSubCategory.W2);
+
+                bool docOk = paystubPresent || w2Present;
+
+                tracing.Trace($"[Rule7] IncomeDocs: paystub={paystubPresent}, w2={w2Present}, pass={docOk}");
+                return docOk;
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("[Rule7] HasIncomeDocForStateCcs ERROR: " + ex);
+                return false;
+            }
+        }
+
+
+        private static bool HasCheckEligibleIncomeRange(IPluginExecutionContext context, IOrganizationService svc, ITracingService tracing, Guid caseId, decimal incomeToCheck)
         {
             tracing.Trace("HasCheckEligibleIncomeRange method is started");
 
-            var yearlyHouseHoldIncome = YearlyHouseHoldIncome(svc, tracing, caseId);
-            tracing.Trace($"Yearly House Hold Income = {yearlyHouseHoldIncome}");
+            var yearlyHouseHoldIncome = incomeToCheck;
+            tracing.Trace($"Income To Check (After Deductions) = {yearlyHouseHoldIncome}");
+           
+
 
             var caseHouseHoldSize = CountHouseHoldSize(svc, tracing, caseId);
             tracing.Trace($"Case Household Size = {caseHouseHoldSize}");
@@ -1426,7 +2243,7 @@ namespace JsonWorkflowEngineRule
             }
             bool incomePayStubPresent = HasDocumentByCategorySubcategory(svc, tracing, caseId, null, DocumentCategory.Income, DocumentSubCategory.Paystub);
             bool incomeW2FPresent = HasDocumentByCategorySubcategory(svc, tracing, caseId, null, DocumentCategory.Income, DocumentSubCategory.W2);
-            var finalResult = incomePayStubPresent && incomeW2FPresent;
+            var finalResult = incomePayStubPresent || incomeW2FPresent;
             tracing.Trace($"incomePayStubPresent = {incomePayStubPresent}");
             tracing.Trace($"incomeW2FPresent = {incomeW2FPresent}");
             // eligible
@@ -1499,7 +2316,12 @@ namespace JsonWorkflowEngineRule
         {
             tracing.Trace($"PopulateRule9Tokens Method is called");
             tokens["medicalbillsamount"] = CalculateMedicalExpense(svc, tracing, caseId);
-            tokens["medicalbillexists"] = HasDocumentByCategorySubcategory(svc, tracing, caseId, null, DocumentCategory.Expenses, DocumentSubCategory.Expense);
+            //tokens["medicalbillexists"] = HasDocumentByCategorySubcategory(svc, tracing, caseId, null, DocumentCategory.Expenses, DocumentSubCategory.Expense);
+            bool hashospitalbills = HasDocumentByCategorySubcategory(svc, tracing, caseId, null, DocumentCategory.Expenses, DocumentSubCategory.HospitalBill);
+            bool hasmedication = HasDocumentByCategorySubcategory(svc, tracing, caseId, null, DocumentCategory.Expenses, DocumentSubCategory.MedicationCosts);
+            bool hasmedicalreceipt = HasDocumentByCategorySubcategory(svc, tracing, caseId, null, DocumentCategory.Expenses, DocumentSubCategory.MedicalReceipts);
+            bool finalresult = hashospitalbills || hasmedication || hasmedicalreceipt;
+            tokens["medicalbillexists"] = finalresult;
 
             tracing.Trace($"Rule9 Tokens => medicalbillsamount={tokens["medicalbillsamount"]}");
             tracing.Trace($"PopulateRule9Tokens Method is end");
@@ -1580,7 +2402,9 @@ namespace JsonWorkflowEngineRule
                 tracing,
                 caseId,
                 CaseRelationShipLookup.SpouseOrPartner,
-                CaseRelationShipLookup.DomesticPartner
+                CaseRelationShipLookup.DomesticPartner,
+                CaseRelationShipLookup.OtherParent,
+                CaseRelationShipLookup.Partner
             ).Any();
 
             tracing.Trace($"Household partner exists: {hasHouseholdPartner}");
@@ -1618,7 +2442,7 @@ namespace JsonWorkflowEngineRule
 
             qe.Criteria.AddCondition(FLD_CH_Case, ConditionOperator.Equal, caseId);
             qe.Criteria.AddCondition(FLD_CH_StateCode, ConditionOperator.Equal, 0);
-            //qe.Criteria.AddCondition(FLD_CH_DateExited, ConditionOperator.Null);
+            qe.Criteria.AddCondition(FLD_CH_DateExited, ConditionOperator.Null);
 
             if (relationships != null && relationships.Length > 0)
             {
@@ -1719,12 +2543,13 @@ namespace JsonWorkflowEngineRule
         /// Notes:
         /// - The rule JSON in PCF uses token: totalactivityhoursperweek >= 25
         ///   To represent "each parent meets 25", we set totalactivityhoursperweek = MIN(parentTotalHours).
-        ///   Then (MIN >= 25) ⇢ all parents >= 25.
+        ///   Then (MIN >= 25) ? all parents >= 25.
         /// - We also add facts for UI summary (employment/education breakdown + per-parent totals).
         /// </summary>
         private static void PopulateRule2Tokens_WpaActivity(
             IOrganizationService svc,
             ITracingService tracing,
+            Guid caseId,
             Guid beneficiaryContactId,
             Dictionary<string, object> tokens,
             Dictionary<string, object> facts)
@@ -1738,6 +2563,8 @@ namespace JsonWorkflowEngineRule
                 tokens[TOKEN_EvidenceCareNeededForChild] = false;
                 tokens[TOKEN_Parent1ActivityHours] = 0m;
                 tokens[TOKEN_Parent2ActivityHours] = 0m;
+                tokens[TOKEN_HasEnrollmentDocument] = true;
+                facts["wpa.enrollment.missingParents"] = "";
 
                 // IMPORTANT: token used in rule JSON (min across parents; here none -> 0)
                 tokens[TOKEN_ParentsTotalActivityHours] = 0m; // (this constant is totalactivityhoursperweek)
@@ -1763,7 +2590,7 @@ namespace JsonWorkflowEngineRule
 
             foreach (var pid in parentIds)
             {
-                var work = SumIncomeWorkHoursPerWeek(svc, tracing, pid);
+                var work = SumIncomeWorkHoursPerWeek(svc, tracing, pid,caseId);
                 var edu = SumEducationWorkHoursPerWeek(svc, tracing, pid);
                 var total = work + edu;
 
@@ -1794,6 +2621,7 @@ namespace JsonWorkflowEngineRule
             // To model "EACH parent must be >= 25", we store MIN(parentTotals)
             var minAcrossParents = parentTotals.Min();
             tokens[TOKEN_ParentsTotalActivityHours] = minAcrossParents;
+
             tokens["parentstotalactivityhoursperweek"] = allWork + allEdu; // backward-compatible alias
 
             // Facts for your HTML summary (case-worker friendly)
@@ -1824,6 +2652,42 @@ namespace JsonWorkflowEngineRule
                 facts["wpa.parent2.educationHoursPerWeek"] = parentEduTotals[1];
                 facts["wpa.parent2.totalHoursPerWeek"] = parentTotals[1];
             }
+
+            // ===== NEW: Rule2 additional requirement - Proof of Enrollment document if education hours exist =====
+            bool hasEnrollmentDocument = true;
+            var missingEnrollmentParents = new List<string>();
+
+            for (int i = 0; i < parentIds.Count; i++)
+            {
+                var parentId = parentIds[i];
+                var eduHours = parentEduTotals[i];
+
+                // Only require doc when this parent actually has education-hours filled (>0)
+                if (eduHours > 0m)
+                {
+                    // Category can be "Verification" or "Verifications" (your code uses both in other rules)
+                    bool docFound =
+                        HasDocumentByCategorySubcategory(svc, tracing, caseId, parentId, "Verification", "Proof of Enrollment")
+                        || HasDocumentByCategorySubcategory(svc, tracing, caseId, parentId, "Verifications", "Proof of Enrollment");
+
+                    if (!docFound)
+                    {
+                        hasEnrollmentDocument = false;
+
+                        var nm = (i < parentNames.Count ? parentNames[i] : "");
+                        if (string.IsNullOrWhiteSpace(nm)) nm = parentId.ToString();
+
+                        missingEnrollmentParents.Add(nm);
+                    }
+                }
+            }
+
+            // If NO parent has eduHours > 0 then missingEnrollmentParents stays empty and token stays true (auto-pass)
+            tokens[TOKEN_HasEnrollmentDocument] = hasEnrollmentDocument;
+            facts["wpa.enrollment.missingParents"] = string.Join(", ", missingEnrollmentParents);
+
+            tracing.Trace($"Rule2 EnrollmentDoc Token => hasenrollmentdocument={hasEnrollmentDocument}; missingParents='{facts["wpa.enrollment.missingParents"]}'");
+
 
             tracing.Trace($"Rule2 Tokens => activityrequirementmet={eachParentMeets25}, parentCount={parentIds.Count}, minTotalAcrossParents(totalactivityhoursperweek)={minAcrossParents}, combinedAllParents={allWork + allEdu}");
         }
@@ -1857,7 +2721,7 @@ namespace JsonWorkflowEngineRule
             // Beneficiary -> association rows
             qe.Criteria.AddCondition(FLD_REL_Contact, ConditionOperator.Equal, beneficiaryContactId);
 
-            // ✅ Only ACTIVE relationships
+            // ? Only ACTIVE relationships
             qe.Criteria.AddCondition(FLD_REL_StateCode, ConditionOperator.Equal, 0);
 
             // Optional: EndDate is null OR EndDate >= today (keeps future-dated end valid)
@@ -1907,27 +2771,40 @@ namespace JsonWorkflowEngineRule
 )
         {
             var list = new List<SummaryFact>();
+            var bliId = bli.Id;
 
             // 1) incident.mcg_yearlyhouseholdincome
-            var hhIncome = inc?.GetAttributeValue<Money>(FLD_CASE_YearlyHouseholdIncome)?.Value ?? 0m;
-            list.Add(new SummaryFact { label = "Household Net Income before deduction", value = "$" + hhIncome.ToString("0.##") });
+            // Apply deductions and update Case.mcg_programspecificdeductions
+            var netAfter = ApplyProgramSpecificDeductionsAndUpdateCase(
+                svc,
+                tracing,
+                caseId,
+                bliId,
+                out var totalDeductions,
+                out var relativeKidsCount,
+                out var medicalDeductionApplied,
+                out var selfEmployedCount
+            );
 
-            // 2) keep empty
-            list.Add(new SummaryFact { label = "No of Relative Kids (Benefit Needed)", value = "" });
+            // BASE values from Case (already passed in as 'inc')
+            var yearlyEligibleIncome = inc?.GetAttributeValue<Money>(FLD_CASE_YearlyEligibleIncome)?.Value ?? 0m;
 
-            // 3) Self employed - incident.mcg_caseincome.mcg_selfemployed
-            var selfEmp = GetAnySelfEmployedFlag(svc, tracing, caseId);  // ✅ Fixed: use svc and caseId
-            list.Add(new SummaryFact { label = "Self Employed", value = selfEmp.HasValue ? (selfEmp.Value ? "Yes" : "No") : "None" });
+            list.Add(new SummaryFact { label = "Household Net Income before deduction", value = "$" + yearlyEligibleIncome.ToString("0.##") });
+            list.Add(new SummaryFact { label = "No of Relative Kids (Benefit Needed)", value = relativeKidsCount.ToString() });
 
-            // 4) Keep empty
-            list.Add(new SummaryFact { label = "Deduction Amount", value = "" });
+            var selfEmpFlag = GetAnySelfEmployedFlag(svc, tracing, caseId);
+            list.Add(new SummaryFact { label = "Self Employed", value = selfEmpFlag.HasValue ? (selfEmpFlag.Value ? "Yes" : "No") : "None" });
 
-            // 5) keep empty
-            list.Add(new SummaryFact { label = "Deductions Applied", value = "" });
+            list.Add(new SummaryFact { label = "Deduction Amount", value = "$" + totalDeductions.ToString("0.##") });
 
-            // 6) incident.mcg_yearlyeligibleincome
-            var eligibleIncome = inc?.GetAttributeValue<Money>(FLD_CASE_YearlyEligibleIncome)?.Value ?? 0m;
-            list.Add(new SummaryFact { label = "Household Net Income after deduction", value = "$" + eligibleIncome.ToString("0.##") });
+            var appliedParts = new List<string>();
+            if (relativeKidsCount > 0) appliedParts.Add($"Relative Kids (${(relativeKidsCount * 5000m):0.##})");
+            if (medicalDeductionApplied) appliedParts.Add("Medical Bills ($2500)");
+            if (selfEmployedCount > 0) appliedParts.Add($"Self Employment ({selfEmployedCount} x 30%)");
+            list.Add(new SummaryFact { label = "Deductions Applied", value = string.Join("; ", appliedParts) });
+
+            list.Add(new SummaryFact { label = "Household Net Income after deduction", value = "$" + netAfter.ToString("0.##") });
+
 
             // 7) beneficiary name (recipient contact formatted is already on BLI lookup)
             var benRef = bli.GetAttributeValue<EntityReference>(FLD_BLI_RecipientContact);
@@ -1967,23 +2844,33 @@ namespace JsonWorkflowEngineRule
             list.Add(new SummaryFact { label = "Is Child Disabled", value = disabledText });
 
             // 11) Citizenship (reuse what you already derive; fallback)
-            list.Add(new SummaryFact { label = "Citizenship", value = string.IsNullOrWhiteSpace(citizenshipTextIfKnown) ? "Info. Not Provided" : citizenshipTextIfKnown });
+            var citizenship = GetCitizenshipFromBirthCertificate(svc, tracing, beneficiaryId);
+            list.Add(new SummaryFact
+            {
+                label = "Citizenship",
+                value = string.IsNullOrWhiteSpace(citizenship) ? "Info. Not Provided" : citizenship
+            });
+
 
             // 12) County (you said plugin already has it; if not present, keep blank)
-            list.Add(new SummaryFact { label = "County", value = "" });
+            var county = GetCountyFromCaseAddress(svc, tracing, caseId);
+            list.Add(new SummaryFact { label = "County", value = string.IsNullOrWhiteSpace(county) ? "Info. Not Provided" : county });
 
             // 13) Service name (mcg_servicebenefitnames formatted)
             var svcName = bli.GetAttributeValue<EntityReference>(FLD_BLI_Benefit)?.Name ?? "";
             list.Add(new SummaryFact { label = "Service Name", value = svcName });
 
             // 14) Benefit id formatted (lookup on BLI) - depends on your real field
-            var benefitIdRef = bli.GetAttributeValue<EntityReference>(FLD_BLI_BenefitId);
-            list.Add(new SummaryFact { label = "Benefit Id", value = benefitIdRef?.Name ?? "" });
+            var benefitIdName = bli.GetAttributeValue<string>(FLD_BLI_BenefitId);
+            list.Add(new SummaryFact { label = "Benefit Id", value = benefitIdName?? "" });
 
             // 15) EICM Contact Id (you said in beneficiary record a field exists; if you only want GUID, use beneficiaryId)
             var contactRecord = svc.Retrieve(ENT_ContactTableName, beneficiaryId, new ColumnSet("mcg_contactid"));
             string eicmContactId = contactRecord.Contains("mcg_contactid") ? contactRecord.GetAttributeValue<string>("mcg_contactid") : string.Empty;
-            list.Add(new SummaryFact { label = "EICM Contact Id", value = string.IsNullOrWhiteSpace(eicmContactId)
+            list.Add(new SummaryFact
+            {
+                label = "EICM Contact Id",
+                value = string.IsNullOrWhiteSpace(eicmContactId)
         ? "Not Provided"
         : eicmContactId
             });
@@ -2005,18 +2892,44 @@ namespace JsonWorkflowEngineRule
 
 
 
-        private static decimal SumIncomeWorkHoursPerWeek(IOrganizationService svc, ITracingService tracing, Guid parentContactId)
+        private static decimal SumIncomeWorkHoursPerWeek(IOrganizationService svc, ITracingService tracing, Guid parentContactId, Guid caseId)
         {
-            var qe = new QueryExpression(ENT_Income)
+            // Step 1: find applicable Case Income rows for this case+parent
+            var ciQ = new QueryExpression(ENT_CaseIncome)
+            {
+                ColumnSet = new ColumnSet(FLD_CI_ContactIncome),
+                TopCount = 500
+            };
+            ciQ.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
+            ciQ.Criteria.AddCondition(FLD_CI_Case, ConditionOperator.Equal, caseId);
+            ciQ.Criteria.AddCondition(FLD_CI_Contact, ConditionOperator.Equal, parentContactId);
+            ciQ.Criteria.AddCondition(FLD_CI_ApplicableIncome, ConditionOperator.Equal, true);
+
+            var caseIncomeRows = svc.RetrieveMultiple(ciQ).Entities;
+
+            var incomeIds = caseIncomeRows
+                .Select(x => x.GetAttributeValue<EntityReference>(FLD_CI_ContactIncome))
+                .Where(r => r != null)
+                .Select(r => r.Id)
+                .Distinct()
+                .ToList();
+
+            if (incomeIds.Count == 0)
+            {
+                tracing.Trace($"Rule2: No applicable case income rows found. caseId={caseId}, parent={parentContactId}");
+                return 0m;
+            }
+
+            // Step 2: load income rows and sum mcg_workhours
+            var incQ = new QueryExpression(ENT_Income)
             {
                 ColumnSet = new ColumnSet(FLD_INC_WorkHours),
                 TopCount = 500
             };
+            incQ.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
+            incQ.Criteria.AddCondition("mcg_incomeid", ConditionOperator.In, incomeIds.Cast<object>().ToArray());
 
-            qe.Criteria.AddCondition(FLD_INC_Contact, ConditionOperator.Equal, parentContactId);
-            qe.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
-
-            var rows = svc.RetrieveMultiple(qe).Entities;
+            var rows = svc.RetrieveMultiple(incQ).Entities;
             decimal total = 0m;
 
             foreach (var r in rows)
@@ -2024,7 +2937,7 @@ namespace JsonWorkflowEngineRule
                 total += ToDecimalSafe(r.Attributes.Contains(FLD_INC_WorkHours) ? r[FLD_INC_WorkHours] : null);
             }
 
-            tracing.Trace($"Rule2: Income hours rows={rows.Count} parent={parentContactId} totalWorkHours={total}");
+            tracing.Trace($"Rule2: Applicable income rows={rows.Count} caseId={caseId} parent={parentContactId} totalWorkHours={total}");
             return total;
         }
 
@@ -2124,6 +3037,46 @@ namespace JsonWorkflowEngineRule
             return id;
         }
 
+        private static List<DenialReasonLine> CollectDenialReasons(List<GroupEval> roots)
+        {
+            var list = new List<DenialReasonLine>();
+            if (roots == null || roots.Count == 0) return list;
+
+            foreach (var r in roots)
+                Walk(r, parentPass: null, output: list);
+
+            return list;
+        }
+
+        private static void Walk(GroupEval g, bool? parentPass, List<DenialReasonLine> output)
+        {
+            if (g == null) return;
+
+            // include a group's denialReason if:
+            // - this group FAILED
+            // - and either it is a top-level group (parentPass == null)
+            //   OR the parent also FAILED (parentPass == false)
+            if (!g.pass && (parentPass == null || parentPass.Value == false))
+            {
+                var reason = (g.denialReason ?? "").Trim();
+                if (!string.IsNullOrWhiteSpace(reason))
+                {
+                    output.Add(new DenialReasonLine
+                    {
+                        id = g.id,
+                        label = g.label,
+                        path = g.path,
+                        reason = reason
+                    });
+                }
+            }
+
+            if (g.groups == null) return;
+            foreach (var child in g.groups)
+                Walk(child, g.pass, output);
+        }
+
+
         private static string BuildResultJson(
     List<string> validationFailures,
     List<EvalLine> evaluationLines,
@@ -2133,8 +3086,12 @@ namespace JsonWorkflowEngineRule
     string resultMessage,
     Dictionary<string, object> facts = null,
     List<GroupEval> groupEvals = null,
-    List<SummaryFact> summaryFacts = null)  
+    List<SummaryFact> summaryFacts = null)
         {
+
+            var denialReasons = CollectDenialReasons(groupEvals ?? new List<GroupEval>());
+            var primaryDenialReason = denialReasons.Count > 0 ? (denialReasons[0].reason ?? "") : "";
+
             var payload = new
             {
                 validationFailures = validationFailures ?? new List<string>(),
@@ -2142,10 +3099,13 @@ namespace JsonWorkflowEngineRule
                 parametersConsidered = parametersConsidered ?? new List<string>(),
                 lines = evaluationLines ?? new List<EvalLine>(),
                 groupEvals = groupEvals ?? new List<GroupEval>(),
+
+                denialReasons = denialReasons,
+                primaryDenialReason = primaryDenialReason,
                 isEligible = isEligible,
                 resultMessage = resultMessage ?? "",
                 facts = facts ?? new Dictionary<string, object>(),
-                summaryFacts = summaryFacts ?? new List<SummaryFact>()  
+                summaryFacts = summaryFacts ?? new List<SummaryFact>()
             };
 
             return Newtonsoft.Json.JsonConvert.SerializeObject(payload);
@@ -2168,6 +3128,8 @@ namespace JsonWorkflowEngineRule
         {
             public string id { get; set; }
             public string label { get; set; }
+
+            public string denialReason { get; set; }
             public string @operator { get; set; } // "AND" | "OR"
             public List<Condition> conditions { get; set; }
             public List<RuleGroup> groups { get; set; }
@@ -2204,7 +3166,18 @@ namespace JsonWorkflowEngineRule
             public string id { get; set; }
             public string label { get; set; }
             public bool pass { get; set; }
+
+            //public string denialReason { get; set; }   //Optional we can remove this 
         }
+
+        private class DenialReasonLine
+        {
+            public string id { get; set; }
+            public string label { get; set; }
+            public string path { get; set; }
+            public string reason { get; set; }
+        }
+
 
 
         private static string GetTokenLabel(string token)
@@ -2224,7 +3197,7 @@ namespace JsonWorkflowEngineRule
                 case "mostrecenttaxreturnprovided": return "Most recent income tax return provided";
                 case "pursuingchildsupportorgoodcause": return "Pursuing child support or good cause documented";
                 case "childsupportdocumentprovided": return "Child support document provided";
-                case "singleparentfamily": return "Is family a sSingle-parent family";
+                case "singleparentfamily": return "Is family a Single-parent family";
                 case "absentparent": return "Absent parent";
                 case "medicalbillsamount": return "Medical bills amount";
                 case "yearlyincome": return "Yearly eligible income";
@@ -2334,7 +3307,8 @@ namespace JsonWorkflowEngineRule
                 id = group.id,
                 label = string.IsNullOrWhiteSpace(group.label) ? group.id : group.label,
                 path = groupPath,
-                op = group.@operator
+                op = group.@operator,
+                denialReason = (group.denialReason ?? "").Trim(),
             };
 
             var localResults = new List<bool>();
@@ -2342,7 +3316,7 @@ namespace JsonWorkflowEngineRule
             // conditions
             foreach (var c in group.conditions ?? new List<Condition>())
             {
-                var pass = EvaluateCondition(c, tokens,tracing, out var actual);
+                var pass = EvaluateCondition(c, tokens, tracing, out var actual);
                 localResults.Add(pass);
 
                 var tokenKey = (c.token ?? "").Trim();
@@ -2351,7 +3325,7 @@ namespace JsonWorkflowEngineRule
                 {
                     path = groupPath,
                     token = tokenKey,
-                    label = GetTokenLabel(tokenKey),   // ✅ friendly label
+                    label = GetTokenLabel(tokenKey),   // ? friendly label
                     op = c.@operator,
                     expected = c.value,
                     actual = actual,
@@ -2391,7 +3365,7 @@ namespace JsonWorkflowEngineRule
 
             foreach (var c in group.conditions ?? new List<Condition>())
             {
-                var pass = EvaluateCondition(c, tokens,tracing, out var actual);
+                var pass = EvaluateCondition(c, tokens, tracing, out var actual);
                 localResults.Add(pass);
                 var tokenKey = (c.token ?? "").Trim();
 
@@ -2399,7 +3373,7 @@ namespace JsonWorkflowEngineRule
                 {
                     path = groupPath,
                     token = tokenKey,
-                    label = GetTokenLabel(tokenKey),   // ✅ key change
+                    label = GetTokenLabel(tokenKey),   // ? key change
                     op = c.@operator,
                     expected = c.value,
                     actual = actual,
@@ -2416,11 +3390,11 @@ namespace JsonWorkflowEngineRule
         }
 
 
-        //private static string GetTokenLabel(string token)
+        //private static string GetTokenLabel(xstring token)
         //{
         //    if (string.IsNullOrWhiteSpace(token)) return "";
 
-        //    // ✅ Friendly labels for UI (fixes your Rule 3 "evidencecareneededforchild" showing raw token)
+        //    // ? Friendly labels for UI (fixes your Rule 3 "evidencecareneededforchild" showing raw token)
         //    switch (token.Trim().ToLowerInvariant())
         //    {
         //        case "evidencecareneededforchild":
@@ -2438,7 +3412,7 @@ namespace JsonWorkflowEngineRule
         //    }
         //}
 
-        
+
 
         private static int CalculateAge(DateTime dob)
         {
@@ -2481,7 +3455,7 @@ namespace JsonWorkflowEngineRule
 
         private static bool EvaluateCondition(Condition c, Dictionary<string, object> tokens, ITracingService tracing, out object actual)
         {
-            var tokenKey = (c.token ?? "").Trim();   
+            var tokenKey = (c.token ?? "").Trim();
             tokens.TryGetValue(tokenKey, out actual);
             var op = (c.@operator ?? "").Trim().ToLowerInvariant();
 
@@ -2533,6 +3507,8 @@ namespace JsonWorkflowEngineRule
             public string op { get; set; }          // AND/OR
             public bool pass { get; set; }
 
+            public string denialReason { get; set; }
+
             public List<EvalLine> conditions { get; set; } = new List<EvalLine>();
             public List<GroupEval> groups { get; set; } = new List<GroupEval>();
         }
@@ -2581,6 +3557,503 @@ namespace JsonWorkflowEngineRule
             return false;
         }
 
+        #endregion
+
+        #region -- Create Notes Record --
+
+        private static void TryCreateEligibilityNote(
+    IOrganizationService svc,
+    ITracingService tracing,
+    Entity bli,
+    EntityReference caseRef,
+    EntityReference benefitRef,
+    EntityReference recipientRef,
+    bool isEligible,
+    string resultMessage,
+    List<string> validationFailures,
+    List<EvalLine> evalLines,
+    List<GroupEval> groupEvals,
+    List<SummaryFact> summaryFacts)
+        {
+            try
+            {
+
+                var nowUtc = DateTime.UtcNow;
+
+                var caseText = caseRef != null ? (!string.IsNullOrWhiteSpace(caseRef.Name) ? caseRef.Name : caseRef.Id.ToString()) : "";
+                var benefitText = benefitRef != null ? (!string.IsNullOrWhiteSpace(benefitRef.Name) ? benefitRef.Name : benefitRef.Id.ToString()) : "";
+                var childText = recipientRef != null ? (!string.IsNullOrWhiteSpace(recipientRef.Name) ? recipientRef.Name : recipientRef.Id.ToString()) : "";
+
+                // Build plain text header for grid
+                var headerText = BuildEligibilityHeaderText(
+                    caseDisplay: caseText,     // e.g. "Created From SR : SR-K3V2G2-1018"
+                    serviceBenefit: benefitText,               // e.g. "WPA 0-5 Child Care Services"
+                    childName: childText,                         // e.g. "Lauren Roberts"
+                    isEligible: isEligible,
+                    utcNow: nowUtc
+                );
+
+                var html = BuildEligibilityNoteHtml(
+                    bli,
+                    caseRef,
+                    benefitRef,
+                    recipientRef,
+                    isEligible,
+                    resultMessage,
+                    validationFailures,
+                    evalLines,
+                    groupEvals,
+                    summaryFacts
+                );
+
+                var note = new Entity(ENT_EICMNotes);
+
+                // Note Type = Eligibility (global choice)
+                note[FLD_NOTE_Type] = new OptionSetValue(NOTE_TYPE_ELIGIBILITY);
+
+                // Rich text field expects HTML
+                note[FLD_NOTE_Description] = html;
+                note[FLD_NOTE_DescriptionText] = headerText;
+
+                note["mcg_name"] = $"Eligibility - {DateTime.UtcNow:yyyy-MM-dd HH:mm}";
+
+                // Link note to Case (lookup field: mcg_incident)
+                if (caseRef != null)
+                {
+                    note[FLD_NOTE_CaseLookup] = caseRef; 
+                }
+
+
+                svc.Create(note);
+                tracing.Trace("mcg_eicmnotes created for eligibility run.");
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("TryCreateEligibilityNote FAILED (ignored): " + ex);
+                // Do not throw - note creation should never block eligibility
+            }
+        }
+
+        private static string BuildEligibilityHeaderText(
+    string caseDisplay,
+    string serviceBenefit,
+    string childName,
+    bool isEligible,
+    DateTime utcNow
+)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Eligibility Determination");
+            sb.AppendLine($"Date (UTC): {utcNow:yyyy-MM-dd HH:mm}");
+            if (!string.IsNullOrWhiteSpace(caseDisplay)) sb.AppendLine($"Case: {caseDisplay}");
+            if (!string.IsNullOrWhiteSpace(serviceBenefit)) sb.AppendLine($"Service/Benefit: {serviceBenefit}");
+            if (!string.IsNullOrWhiteSpace(childName)) sb.AppendLine($"Child: {childName}");
+            sb.AppendLine($"Result: {(isEligible ? "Eligible" : "Not Eligible")}");
+            return sb.ToString().Trim();
+        }
+
+
+        private static string BuildEligibilityNoteHtml(
+            Entity bli,
+            EntityReference caseRef,
+            EntityReference benefitRef,
+            EntityReference recipientRef,
+            bool isEligible,
+            string resultMessage,
+            List<string> validationFailures,
+            List<EvalLine> evalLines,
+            List<GroupEval> groupEvals,
+            List<SummaryFact> summaryFacts)
+        {
+            string H(string s) => System.Security.SecurityElement.Escape(s ?? "");
+
+            string F(object v)
+            {
+                if (v == null) return "";
+                if (v is bool b) return b ? "Yes" : "No";
+                if (v is decimal d) return d.ToString("0.##", CultureInfo.InvariantCulture);
+                if (v is double db) return ((decimal)db).ToString("0.##", CultureInfo.InvariantCulture);
+                if (v is float f) return ((decimal)f).ToString("0.##", CultureInfo.InvariantCulture);
+                if (v is int i) return i.ToString(CultureInfo.InvariantCulture);
+                if (v is long l) return l.ToString(CultureInfo.InvariantCulture);
+                if (v is Money m) return m.Value.ToString("0.##", CultureInfo.InvariantCulture);
+                return v.ToString();
+            }
+
+            string StatusPill(bool pass)
+            {
+                if (pass)
+                    return "<span style='display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:700; " +
+                           "color:#166534; background:#dcfce7; border:1px solid #bbf7d0;'>Pass</span>";
+
+                return "<span style='display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:700; " +
+                       "color:#991b1b; background:#fee2e2; border:1px solid #fecaca;'>Fail</span>";
+            }
+
+            EvalLine FindFirstFailedCondition(GroupEval g)
+            {
+                if (g == null) return null;
+
+                var firstLocalFail = (g.conditions ?? new List<EvalLine>()).FirstOrDefault(x => x != null && !x.pass);
+                if (firstLocalFail != null) return firstLocalFail;
+
+                foreach (var child in (g.groups ?? new List<GroupEval>()))
+                {
+                    var f = FindFirstFailedCondition(child);
+                    if (f != null) return f;
+                }
+                return null;
+            }
+
+
+            var nowUtc = DateTime.UtcNow;
+
+            var caseText = caseRef != null ? (!string.IsNullOrWhiteSpace(caseRef.Name) ? caseRef.Name : caseRef.Id.ToString()) : "";
+            var benefitText = benefitRef != null ? (!string.IsNullOrWhiteSpace(benefitRef.Name) ? benefitRef.Name : benefitRef.Id.ToString()) : "";
+            var childText = recipientRef != null ? (!string.IsNullOrWhiteSpace(recipientRef.Name) ? recipientRef.Name : recipientRef.Id.ToString()) : "";
+
+            var sb = new System.Text.StringBuilder();
+
+            sb.Append("<div style='font-family:Segoe UI, Arial, sans-serif; font-size:13px; color:#0f172a;'>");
+            sb.Append("<div style='font-size:18px; font-weight:700; margin-bottom:6px;'>Eligibility Determination</div>");
+
+            sb.Append("<div style='margin-bottom:10px;'>");
+            sb.Append($"<div><b>Date (UTC):</b> {H(nowUtc.ToString("yyyy-MM-dd HH:mm"))}</div>");
+            if (!string.IsNullOrWhiteSpace(caseText)) sb.Append($"<div><b>Case:</b> {H(caseText)}</div>");
+            if (!string.IsNullOrWhiteSpace(benefitText)) sb.Append($"<div><b>Service/Benefit:</b> {H(benefitText)}</div>");
+            if (!string.IsNullOrWhiteSpace(childText)) sb.Append($"<div><b>Child:</b> {H(childText)}</div>");
+
+            var color = isEligible ? "#16a34a" : "#dc2626";
+            sb.Append($"<div><b>Result:</b> <span style='color:{color}; font-weight:700;'>{H(resultMessage ?? "")}</span></div>");
+            sb.Append("</div>");
+
+            // Validation failures (if any) – keep it super readable
+            if (validationFailures != null && validationFailures.Count > 0)
+            {
+                sb.Append("<div style='margin:10px 0; padding:10px; background:#fff7ed; border:1px solid #fed7aa; border-radius:8px;'>");
+                sb.Append("<div style='font-weight:700; margin-bottom:6px;'>Validation issues (fix these and run again):</div>");
+                sb.Append("<ul style='margin:0; padding-left:18px;'>");
+                foreach (var v in validationFailures.Where(x => !string.IsNullOrWhiteSpace(x)))
+                    sb.Append($"<li>{H(v)}</li>");
+                sb.Append("</ul>");
+                sb.Append("</div>");
+                sb.Append("</div>");
+                return sb.ToString();
+            }
+
+            // Summary facts table
+            if (summaryFacts != null && summaryFacts.Count > 0)
+            {
+                sb.Append("<div style='margin-top:10px; font-weight:700; margin-bottom:6px;'>Summary</div>");
+                sb.Append("<table style='width:100%; border-collapse:collapse; border:1px solid #e5e7eb;'>");
+                foreach (var sf in summaryFacts)
+                {
+                    sb.Append("<tr>");
+                    sb.Append($"<td style='border:1px solid #e5e7eb; padding:6px; width:45%; background:#f8fafc;'><b>{H(sf.label)}</b></td>");
+                    sb.Append($"<td style='border:1px solid #e5e7eb; padding:6px;'>{H(sf.value)}</td>");
+                    sb.Append("</tr>");
+                }
+                sb.Append("</table>");
+            }
+
+            
+            // Criteria Summary (Top-level groups only) – exactly like your popup (Q1..Q8)
+            if (groupEvals != null && groupEvals.Count > 0)
+            {
+                sb.Append("<div style='margin-top:14px; font-weight:700; margin-bottom:6px;'>Eligibility Criteria</div>");
+                sb.Append("<table style='width:100%; border-collapse:collapse; border:1px solid #e5e7eb;'>");
+
+                foreach (var g in groupEvals) // these are ROOT children => Q1..Q8
+                {
+                    var pass = g != null && g.pass;
+
+                    // Denial reason: prefer configured denialReason, else fallback to first failed condition
+                    string denial = "";
+                    if (!pass)
+                    {
+                        denial = (g.denialReason ?? "").Trim();
+
+                        if (string.IsNullOrWhiteSpace(denial))
+                        {
+                            var ff = FindFirstFailedCondition(g);
+                            if (ff != null)
+                            {
+                                denial = $"{ff.label}: expected {F(ff.expected)} but was {F(ff.actual)}";
+                            }
+                            else
+                            {
+                                denial = "Criteria not met.";
+                            }
+                        }
+                    }
+
+                    sb.Append("<tr>");
+                    sb.Append("<td style='border:1px solid #e5e7eb; padding:10px; background:#ffffff;'>");
+
+                    // ✅ Only group name (no ROOT > ...)
+                    sb.Append($"<div style='font-weight:600;'>{H(g.label)}</div>");
+
+                    // ✅ Only show denial reason if FAILED
+                    if (!pass)
+                    {
+                        sb.Append("<div style='margin-top:4px; color:#991b1b; font-size:12px;'>");
+                        sb.Append($"<b>Denial reason:</b> {H(denial)}");
+                        sb.Append("</div>");
+                    }
+
+                    sb.Append("</td>");
+
+                    sb.Append("<td style='border:1px solid #e5e7eb; padding:10px; width:120px; text-align:right; background:#ffffff;'>");
+                    sb.Append(StatusPill(pass));
+                    sb.Append("</td>");
+
+                    sb.Append("</tr>");
+                }
+
+                sb.Append("</table>");
+            }
+
+
+            sb.Append("<div style='margin-top:12px; color:#64748b; font-size:12px;'>This note was generated automatically when eligibility was checked.</div>");
+            sb.Append("</div>");
+
+            return sb.ToString();
+        }
+
+
+        #endregion
+
+        #region -- Set Eligibility Helper --
+
+        private static string GetIncomeRangeTextForCase(
+    IPluginExecutionContext context,
+    IOrganizationService svc,
+    ITracingService tracing,
+    Guid caseId)
+        {
+            var householdSize = (int)CountHouseHoldSize(svc, tracing, caseId);
+
+            var bliId = GetGuidFromInput(context, IN_CaseBenefitLineItemId);
+            var bli = svc.Retrieve(ENT_BenefitLineItem, bliId, new ColumnSet(FLD_BLI_Benefit));
+            var serviceBenefitRef = bli.GetAttributeValue<EntityReference>(FLD_BLI_Benefit);
+
+            if (serviceBenefitRef == null || string.IsNullOrWhiteSpace(serviceBenefitRef.Name))
+                return "";
+
+            var serviceBenefitName = serviceBenefitRef.Name.Trim();
+
+            var eaQuery = new QueryExpression(ENT_EligibilityAdmin)
+            {
+                ColumnSet = new ColumnSet(FLD_EA_Name),
+                TopCount = 1
+            };
+            eaQuery.Criteria.AddCondition(FLD_EA_Name, ConditionOperator.Equal, serviceBenefitName);
+
+            var eligibilityAdmin = svc.RetrieveMultiple(eaQuery).Entities.FirstOrDefault();
+            if (eligibilityAdmin == null) return "";
+
+            var rangeQuery = new QueryExpression(ENT_EligibilityIncomeRange)
+            {
+                ColumnSet = new ColumnSet(FLD_EIR_HouseHoldSize, FLD_EIR_MinIncome, FLD_EIR_MaxIncome, ENT_SubsidyTableName),
+                TopCount = 5000
+            };
+            rangeQuery.Criteria.AddCondition(FLD_EIR_EligibilityAdmin, ConditionOperator.Equal, eligibilityAdmin.Id);
+            rangeQuery.Criteria.AddCondition(ENT_SubsidyTableName, ConditionOperator.Equal, "c");
+
+            var ranges = svc.RetrieveMultiple(rangeQuery).Entities;
+
+            var matched = ranges.FirstOrDefault(r =>
+                r.GetAttributeValue<int?>(FLD_EIR_HouseHoldSize) == householdSize &&
+                string.Equals((r.GetAttributeValue<string>(ENT_SubsidyTableName) ?? "").Trim(), "c", StringComparison.OrdinalIgnoreCase));
+
+            if (matched == null) return "";
+
+            var min = matched.GetAttributeValue<Money>(FLD_EIR_MinIncome)?.Value ?? 0m;
+            var max = matched.GetAttributeValue<Money>(FLD_EIR_MaxIncome)?.Value ?? 0m;
+
+            return $"{min:0.##} - {max:0.##}";
+        }
+
+        private static void UpsertEligibilityData(
+    IPluginExecutionContext context,
+    IOrganizationService svc,
+    ITracingService tracing,
+    Entity bli,
+    EntityReference caseRef,
+    Entity incCase,
+    EntityReference benefitRef,
+    EntityReference recipientRef,
+    bool overallEligible,
+    List<GroupEval> groupEvals,
+    List<EvalLine> evalLines)
+        {
+            try
+            {
+                if (caseRef == null) return;
+
+                var caseId = caseRef.Id;
+                var bliId = bli.Id;
+
+                // Compute deductions ONCE (reuse your function)
+                var netAfter = ApplyProgramSpecificDeductionsAndUpdateCase(
+                    svc, tracing, caseId, bliId,
+                    out var totalDeductions,
+                    out var relativeKidsCount,
+                    out var medicalDeductionApplied,
+                    out var selfEmployedCount
+                );
+
+                var yearlyEligibleIncome = incCase?.GetAttributeValue<Money>(FLD_CASE_YearlyEligibleIncome)?.Value ?? 0m;
+
+                // Deduction applied text same as summary
+                var appliedParts = new List<string>();
+                if (relativeKidsCount > 0) appliedParts.Add($"Relative Kids (${(relativeKidsCount * 5000m):0.##})");
+                if (medicalDeductionApplied) appliedParts.Add("Medical Bills ($2500)");
+                if (selfEmployedCount > 0) appliedParts.Add($"Self Employment ({selfEmployedCount} x 30%)");
+                var deductionAppliedText = string.Join("; ", appliedParts);
+
+                var householdSize = (int)CountHouseHoldSize(svc, tracing, caseId);
+
+                // Child age + disability
+                int childAge = 0;
+                bool childDisabled = false;
+
+                if (recipientRef != null)
+                {
+                    var ben = svc.Retrieve(ENT_ContactTableName, recipientRef.Id, new ColumnSet("birthdate", "mcg_disability"));
+                    var dob = ben.GetAttributeValue<DateTime?>("birthdate");
+                    if (dob.HasValue) childAge = CalculateAge(dob.Value);
+
+                    if (ben.FormattedValues != null && ben.FormattedValues.ContainsKey("mcg_disability"))
+                        childDisabled = ben.FormattedValues["mcg_disability"].Equals("Yes", StringComparison.OrdinalIgnoreCase);
+                    else if (ben.Attributes.Contains("mcg_disability") && ben["mcg_disability"] is bool b)
+                        childDisabled = b;
+                }
+
+                // Verified checkbox from BLI verified choice
+                var verifiedOs = bli.GetAttributeValue<OptionSetValue>(FLD_BLI_Verified);
+                bool verified = (verifiedOs != null && verifiedOs.Value == VERIFIED_YES);
+
+                // Self employed checkbox (any income record has self employed flag)
+                var selfEmpFlag = GetAnySelfEmployedFlag(svc, tracing, caseId) ?? false;
+
+                // Citizenship: you can store blank or reuse your doc logic (for now safe default)
+                // If you want exact value, you can add a GetChildCitizenship... helper later.
+                var citizenship = GetCitizenshipFromBirthCertificate(svc, tracing, recipientRef.Id);
+
+                // Income range text
+                var incomeRangeText = GetIncomeRangeTextForCase(context, svc, tracing, caseId);
+
+                // Eligibility status text
+                var statusText = overallEligible ? "Eligible" : "Not Eligible";
+
+                // Primary denial reason
+                var ineligReason = overallEligible ? "" : GetAllDenialReasonsText(groupEvals, evalLines);
+
+                // Find existing eligibilitydata record for this BLI (update latest) else create new
+                var qe = new QueryExpression(ENT_EligibilityData)
+                {
+                    ColumnSet = new ColumnSet("mcg_eligibilitydataid"),
+                    TopCount = 1
+                };
+                qe.Criteria.AddCondition(FLD_ED_BLI_Lookup, ConditionOperator.Equal, bliId);
+                qe.Criteria.AddCondition("statecode", ConditionOperator.Equal, 0);
+                qe.Orders.Add(new OrderExpression("createdon", OrderType.Descending));
+
+                var existing = svc.RetrieveMultiple(qe).Entities.FirstOrDefault();
+
+                var ed = existing != null
+                    ? new Entity(ENT_EligibilityData) { Id = existing.Id }
+                    : new Entity(ENT_EligibilityData);
+
+                var county = GetCountyFromCaseAddress(svc, tracing, caseId);
+
+                // Link to BLI (always set)
+                ed[FLD_ED_BLI_Lookup] = new EntityReference(ENT_BenefitLineItem, bliId);
+
+                // Populate mapped fields
+                ed[FLD_ED_ApplicationType] = "WPA"; // per mapping (or derive from benefit if you prefer)
+                ed[FLD_ED_ServiceNameBenefitName] = benefitRef?.Name ?? "";
+                ed[FLD_ED_NetIncomeBeforeDeduction] = new Money(yearlyEligibleIncome);
+                ed[FLD_ED_DeductionAmount] = new Money(totalDeductions);
+                ed[FLD_ED_DeductionApplied] = deductionAppliedText;
+                ed[FLD_ED_NetIncomeAfterDeduction] = new Money(netAfter);
+                ed[FLD_ED_ChildName] = recipientRef?.Name ?? "";
+                ed[FLD_ED_HouseholdSize] = householdSize;
+                ed[FLD_ED_ChildAge] = childAge;
+                ed[FLD_ED_ChildDisabledFlag] = childDisabled;
+                ed[FLD_ED_Citizenship] = citizenship;
+                ed[FLD_ED_County] = county; 
+                ed[FLD_ED_CareLevel] = GetChoiceFormattedValue(bli, FLD_BLI_CareServiceLevel);
+                ed[FLD_ED_CareType] = GetChoiceFormattedValue(bli, FLD_BLI_CareServiceType);
+                ed[FLD_ED_BenefitFrequency] = GetChoiceFormattedValue(bli, FLD_BLI_ServiceFrequency);
+
+                // Eligibility Amount: keep blank unless you confirm exact BLI field name
+                // ed[FLD_ED_EligibilityAmount] = new Money(...);
+
+                ed[FLD_ED_EligibilityStatus] = statusText;
+                ed[FLD_ED_IncomeRange] = incomeRangeText;
+                ed[FLD_ED_IneligibilityReason] = ineligReason;
+                ed[FLD_ED_Verified] = verified;
+                ed[FLD_ED_NumberOfRelativeKids] = relativeKidsCount;
+                ed[FLD_ED_SelfEmployedSingleBothParents] = selfEmpFlag;
+
+                ed[FLD_ED_CaseId] = caseRef.Name ?? caseRef.Id.ToString();
+                ed[FLD_ED_BenefitId] = bli.GetAttributeValue<string>(FLD_BLI_BenefitId) ?? "";
+
+                if (existing != null)
+                {
+                    svc.Update(ed);
+                    bli["mcg_haseligibilitydata"] = true;
+                    svc.Update(bli);
+                    tracing.Trace($"EligibilityData UPDATED for BLI={bliId}, eligibilitydataid={existing.Id}");
+                }
+                else
+                {
+                    var newId = svc.Create(ed);
+                    bli["mcg_haseligibilitydata"] = true;
+                    svc.Update(bli);
+                    tracing.Trace($"EligibilityData CREATED for BLI={bliId}, eligibilitydataid={newId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                tracing.Trace("UpsertEligibilityData FAILED (ignored): " + ex);
+                // do not block eligibility evaluation
+            }
+        }
+
+
+        private static void TrySetEligibilityStatusEligible(
+    IOrganizationService service,
+    ITracingService tracing,
+    Guid bliId,
+    Entity bliLoaded)
+        {
+            try
+            {
+                // Use already-loaded value if present
+                var current = bliLoaded?.GetAttributeValue<OptionSetValue>(FLD_BLI_EligibilityStatus)?.Value;
+
+                if (current.HasValue && current.Value == ELIG_STATUS_ELIGIBLE)
+                {
+                    tracing.Trace($"EligibilityStatus already Eligible for BLI {bliId}. No update needed.");
+                    return;
+                }
+
+                var upd = new Entity(ENT_BenefitLineItem, bliId);
+                upd[FLD_BLI_EligibilityStatus] = new OptionSetValue(ELIG_STATUS_ELIGIBLE);
+
+                service.Update(upd);
+
+                tracing.Trace($"Updated BLI {bliId} mcg_eligibilitystatus => Eligible ({ELIG_STATUS_ELIGIBLE}).");
+            }
+            catch (Exception ex)
+            {
+                // Don’t fail eligibility evaluation just because status update failed
+                tracing.Trace("Failed to update mcg_eligibilitystatus to Eligible. " + ex);
+            }
+        }
         #endregion
     }
 }

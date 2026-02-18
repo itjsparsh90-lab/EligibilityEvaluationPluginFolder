@@ -1,0 +1,843 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Eligibility Result</title>
+
+  <style>
+    :root{
+      --bg:#f5f7fb; --card:#fff; --text:#0f172a; --muted:#64748b;
+      --ok:#16a34a; --okbg:#e7f7ee; --bad:#dc2626; --badbg:#ffecee;
+      --border:#eef2f7; --shadow:0 18px 40px rgba(2,6,23,.12);
+      --danger:#b4232c; --danger2:#dc2626; --dangerBg:#fff1f2;
+    }
+    html,body{margin:0;padding:0;background:transparent;font-family:Segoe UI,system-ui,-apple-system,Arial,sans-serif;color:var(--text)}
+    .wrap{width:100%;min-height:100vh;padding:14px;background:var(--bg);box-sizing:border-box}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow)}
+    .h-left{display:flex;gap:12px;align-items:center}
+    .badgeIcon{width:46px;height:46px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#e0f2fe,#dbeafe);border:1px solid #dbeafe}
+    .dot{width:30px;height:30px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;background:#ef4444;border:2px solid rgba(255,255,255,.9);box-shadow:0 10px 22px rgba(239,68,68,.25)}
+    .dot.ok{background:#22c55e;box-shadow:0 10px 22px rgba(34,197,94,.25)}
+    .titleBox .title{font-weight:900;font-size:16px}
+    .titleBox .sub{margin-top:2px;font-size:12px;color:var(--muted);font-weight:600}
+    .pill{padding:8px 12px;border-radius:999px;font-weight:900;font-size:12px;border:1px solid transparent;letter-spacing:.4px;user-select:none}
+    .pill.ok{background:var(--okbg);border-color:#bfe8cf;color:#0f7a2e}
+    .pill.bad{background:var(--badbg);border-color:#ffc9ce;color:#b4232c}
+    .panel{margin-top:12px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+    .section{padding:14px 16px;border-top:1px solid var(--border)}
+    .section:first-child{border-top:none}
+    .secHdr{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .secHdr .h{font-size:12px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;color:#334155}
+    .secHdr .sub{font-size:12px;color:var(--muted);font-weight:700}
+
+    /* Summary */
+    .summaryBox{border:1px solid var(--border);border-radius:14px;padding:12px;background:#fbfdff}
+    .summaryLead{font-size:12px;font-weight:700;color:#334155;margin-bottom:10px}
+    .summaryRow{display:flex;justify-content:space-between;gap:14px;padding:8px 10px;border-radius:12px;border:1px solid var(--border);background:#fff;margin-top:8px}
+    .summaryRow .k{font-size:12px;font-weight:800;color:#334155}
+    .summaryRow .v{font-size:12px;font-weight:900;color:#0f172a;text-align:right}
+
+    /* Activity work hours */
+
+    /* Activity / Work hours breakdown */
+.activityWrap{
+  margin-top:10px;
+  border:1px solid #fee2e2;
+  border-radius:14px;
+  background:#fff7f7;
+  padding:10px;
+}
+.activityHdr{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  margin-bottom:8px;
+}
+.activityHdr .t{
+  font-size:12px;
+  font-weight:950;
+  letter-spacing:.6px;
+  text-transform:uppercase;
+  color:#7f1d1d;
+}
+.activityHdr .req{
+  font-size:12px;
+  font-weight:900;
+  color:#991b1b;
+}
+.parentCard{
+  margin-top:10px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:#fff;
+  padding:10px;
+}
+.parentTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.parentName{
+  font-size:13px;
+  font-weight:950;
+  color:#0f172a;
+}
+.parentPill{
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:950;
+  font-size:11px;
+  border:1px solid transparent;
+}
+.parentPill.ok{ background:var(--okbg); border-color:#bfe8cf; color:#0f7a2e; }
+.parentPill.bad{ background:var(--badbg); border-color:#ffc9ce; color:#b4232c; }
+
+.activityGrid{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap:6px 10px;
+  margin-top:8px;
+}
+.activityKey{
+  font-size:12px;
+  font-weight:850;
+  color:#334155;
+}
+.activityVal{
+  font-size:12px;
+  font-weight:950;
+  color:#0f172a;
+  text-align:right;
+}
+.activityNote{
+  margin-top:8px;
+  font-size:12px;
+  font-weight:750;
+  color:#64748b;
+}
+
+    /* Denial UI (stronger red + bigger reason text) */
+    .denyWrap{
+      border:1px solid #fecdd3;
+      background: linear-gradient(180deg, #fff1f2, #ffffff);
+      border-radius:16px;
+      padding:12px;
+    }
+    .denyHint{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      font-size:12px; font-weight:800; color:#7f1d1d;
+      margin-bottom:8px;
+    }
+    .denyCount{
+      background:#ffe4e6;
+      border:1px solid #fecdd3;
+      color:#9f1239;
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:900;
+      white-space:nowrap;
+    }
+    .denyCard{
+      border:1px solid #fecdd3;
+      background:#fff;
+      border-radius:14px;
+      padding:12px;
+      margin-top:10px;
+      box-shadow: 0 10px 24px rgba(220,38,38,.10);
+      position:relative;
+      overflow:hidden;
+    }
+    .denyCard:before{
+      content:"";
+      position:absolute;
+      left:0; top:0; bottom:0;
+      width:6px;
+      background: linear-gradient(180deg, #ef4444, #b91c1c);
+    }
+    .denyTop{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom:8px;
+    }
+    .denyBadge{
+      display:flex; align-items:center; gap:8px;
+      flex: 0 0 auto;
+    }
+    .denyX{
+      width:22px;height:22px;border-radius:999px;
+      display:flex;align-items:center;justify-content:center;
+      background:#ffe4e6;border:1px solid #fecdd3;
+      color:#b4232c;font-weight:900;
+    }
+    .denyQuestion{
+      font-size:12px;
+      font-weight:900;
+      color:#475569;
+      text-transform:uppercase;
+      letter-spacing:.6px;
+      line-height:1.2;
+      margin-top:2px;
+    }
+    .denyReason{
+      font-size:15px;          /* bigger than question */
+      font-weight:950;
+      color: var(--danger2);
+      line-height:1.25;
+      word-break:break-word;
+    }
+    .denyPath{
+      margin-top:6px;
+      font-size:12px;
+      font-weight:800;
+      color:#64748b;
+      word-break:break-word;
+    }
+    .denyTag{
+      background:#ffe4e6;border:1px solid #fecdd3;color:#9f1239;
+      padding:6px 10px;border-radius:999px;font-weight:950;font-size:12px;
+      flex:0 0 auto;
+    }
+
+    /* Accordion */
+    .accItem{border:1px solid var(--border);border-radius:14px;background:#fff;margin-top:10px;overflow:hidden}
+    .accHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 12px;cursor:pointer}
+    .accTitle{display:flex;align-items:center;gap:10px;min-width:0}
+    .chev{width:22px;height:22px;border-radius:999px;display:flex;align-items:center;justify-content:center;border:1px solid #cbd5e1;color:#334155;font-weight:900;flex:0 0 auto}
+    .accLabel{font-weight:900;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .accMeta{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+    .tag{font-size:12px;font-weight:900;padding:6px 10px;border-radius:999px;border:1px solid transparent}
+    .tag.ok{background:var(--okbg);border-color:#bfe8cf;color:#0f7a2e}
+    .tag.bad{background:var(--badbg);border-color:#ffc9ce;color:#b4232c}
+    .accBody{display:none;padding:0 12px 12px 12px;background:#fbfdff;border-top:1px solid var(--border)}
+    .accBody.open{display:block}
+
+    /* Condition rows */
+    .cond{border:1px solid var(--border);border-radius:14px;padding:10px 10px;margin-top:10px;background:#fff}
+    .condTop{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;font-weight:700}
+    .icon{width:18px;height:18px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:900;border:1px solid transparent;flex:0 0 auto}
+    .icon.ok{background:var(--okbg);color:#0f7a2e;border-color:#bfe8cf}
+    .icon.bad{background:var(--badbg);color:#b4232c;border-color:#ffc9ce}
+    .condMain{margin-top:6px;font-size:13px;font-weight:900;color:var(--text);word-break:break-word}
+    .condKv{margin-top:4px;font-size:12px;color:#475569;word-break:break-word}
+    .condKv b{color:var(--text)}
+
+    .btns{display:flex;justify-content:flex-end;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:#fff}
+    button{cursor:pointer;border:1px solid #cbd5e1;background:#fff;padding:10px 14px;border-radius:12px;font-weight:900}
+    button.primary{background:#2563eb;border-color:#2563eb;color:#fff}
+    button:active{transform:translateY(1px)}
+    .empty{color:var(--muted);font-size:13px;padding:6px 2px;font-weight:700}
+    
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="h-left">
+      <div class="badgeIcon"><div class="dot" id="badgeDot">!</div></div>
+      <div class="titleBox">
+        <div class="title">Eligibility Result</div>
+        <div class="sub" id="subtitle">Loading…</div>
+      </div>
+    </div>
+    <div id="statusPill" class="pill">—</div>
+  </div>
+
+  <div class="panel">
+
+    <div class="section">
+      <div class="secHdr"><div class="h">Eligibility Summary</div></div>
+      <div class="summaryBox">
+        <div class="summaryLead">For the WPA eligibility determination, the below parameters were considered:</div>
+        <div id="summaryRows"></div>
+      </div>
+    </div>
+
+    <!-- Denial Reasons (FAILED QUESTION GROUPS ONLY) -->
+    <div class="section" id="denialSection" style="display:none;">
+      <div class="secHdr">
+        <div class="h">Denial Reasons</div>
+        <div class="sub" id="denialHint"></div>
+      </div>
+
+      <div class="denyWrap">
+        <div class="denyHint">
+          <div>These are the failed questions (top-level groups). Expand “Eligibility Criteria” to see internal details.</div>
+          <div class="denyCount" id="denyCountPill">0 Failed</div>
+        </div>
+        <div id="denialList"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="secHdr">
+        <div class="h">Eligibility Criteria</div>
+        <div class="sub" id="criteriaHint"></div>
+      </div>
+      <div id="criteriaAccordion"></div>
+    </div>
+
+    <div class="btns">
+      <button id="copyBtn">Copy</button>
+      <button class="primary" id="okBtn">OK</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function safeJsonParse(s){ try{return JSON.parse(s);}catch(e){return null;} }
+  function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])); }
+  function yesNo(v){
+    if(typeof v==="boolean") return v?"Yes":"No";
+    if(v===null||v===undefined) return "";
+    const t=String(v).trim().toLowerCase();
+    if(t==="true") return "Yes"; if(t==="false") return "No";
+    return String(v);
+  }
+  function boolVal(v){
+    if (typeof v === "boolean") return v;
+    if (typeof v === "string") {
+      const t = v.trim().toLowerCase();
+      if (t === "true") return true;
+      if (t === "false") return false;
+    }
+    return !!v;
+  }
+
+  const TOKEN_LABELS = {
+    "applicableincome":"Applicable income present",
+    "applicableexpense":"Applicable expense present",
+    "totalactivityhoursperweek":"Total parent activity hours per week (work + education)",
+    "enrolledfulltimeprogram":"Enrolled in a full-time program",
+    "proofidentityprovided":"Proof of identity provided",
+    "proofresidencyprovided":"Proof of residency provided",
+    "mostrecenttaxreturnprovided":"Most recent income tax return provided",
+    "yearlyincome":"Yearly eligible income",
+    "householdsize":"Household size",
+    "householdsizeadjusted":"Household size (adjusted)",
+    "incomecategory":"Income category (State A-J / C / D)",
+    "ncpexists":"Is there an NCP for the child?",
+    "ncppayschildsupport":"Does NCP pay child support?",
+    "otheradultpartnerorspouse":"Other adult in household is Partner/Spouse",
+    "issingleparent":"Is a Single Parent?",
+    "singleparentfamily":"Single-parent family",
+    "absentparent":"Absent parent"
+  };
+
+  let __facts = null;
+
+  function getQueryParam(name){
+    try{ return new URL(window.location.href).searchParams.get(name); }catch(e){ return null; }
+  }
+
+  function getPayloadFromSession(){
+    const dataParam = getQueryParam("data");
+    if (dataParam) {
+      let decoded = dataParam;
+      try { decoded = decodeURIComponent(dataParam); } catch(e) {}
+      const dataObj = safeJsonParse(decoded);
+      const key = dataObj && dataObj.key;
+      if (key) {
+        const raw = sessionStorage.getItem(key);
+        const p = safeJsonParse(raw);
+        if (p) return p;
+      }
+    }
+    const rawLegacy =
+      sessionStorage.getItem("eligibilityResultJson") ||
+      sessionStorage.getItem("eligibilityResult") ||
+      sessionStorage.getItem("mcg_eligibility_payload") || "";
+    return safeJsonParse(rawLegacy);
+  }
+
+  function addSummaryRow(rows, k, v){
+    rows.push(`<div class="summaryRow"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`);
+  }
+
+  function formatConditionText(c){
+    const token = (c.token||"").toLowerCase();
+    const label = c.label || TOKEN_LABELS[token] || c.token || "—";
+    const op = c.op || c.operator || "";
+    const expected = (c.expected!==undefined) ? yesNo(c.expected) : "";
+    const actual = (c.actual!==undefined) ? yesNo(c.actual) : "";
+    const base = (op && expected!=="") ? `${label} ${op} ${expected}` : `${label}`;
+    const cur = (actual!=="") ? ` (Current: ${actual})` : "";
+    return base + cur;
+  }
+  let __activityRenderedOnce = false;
+let __activityBreakdown = null;
+
+function toNum(x){
+  const n = Number(x);
+  return isNaN(n) ? 0 : n;
+}
+
+function factGet(facts, key){
+  if (!facts || typeof facts !== "object") return undefined;
+  return facts[key];
+}
+
+function buildActivityBreakdownFromFacts(facts){
+  const count = toNum(factGet(facts, "wpa.parents.count")) || 0;
+  if (!count) return null;
+
+  const required = 25;
+  const eachMeets = factGet(facts, "wpa.activity.eachParentMeets25");
+  const parents = [];
+
+  for (let i = 1; i <= count; i++){
+    const name = factGet(facts, `wpa.parent${i}.name`) || `Parent ${i}`;
+    const emp = toNum(factGet(facts, `wpa.parent${i}.employmentHoursPerWeek`));
+    const edu = toNum(factGet(facts, `wpa.parent${i}.educationHoursPerWeek`));
+    const total = factGet(facts, `wpa.parent${i}.totalHoursPerWeek`) !== undefined
+      ? toNum(factGet(facts, `wpa.parent${i}.totalHoursPerWeek`))
+      : (emp + edu);
+
+    const meets = total >= required;
+
+    parents.push({ name, emp, edu, total, meets });
+  }
+
+  return {
+    requiredHours: required,
+    eachParentMeets25: (eachMeets === true || String(eachMeets).toLowerCase() === "true"),
+    employmentTotal: toNum(factGet(facts, "wpa.activity.employmentHoursPerWeekTotal")),
+    educationTotal: toNum(factGet(facts, "wpa.activity.educationHoursPerWeekTotal")),
+    combinedTotal: toNum(factGet(facts, "wpa.activity.combinedHoursPerWeekTotal")),
+    minAcrossParents: toNum(factGet(facts, "wpa.activity.minTotalHoursPerWeekAcrossParents")),
+    parents
+  };
+}
+
+function renderActivityBreakdown(b){
+  if (!b || !b.parents || !b.parents.length) return "";
+
+  const req = b.requiredHours || 25;
+
+  const parentsHtml = b.parents.map(p => `
+    <div class="parentCard">
+      <div class="parentTop">
+        <div class="parentName">${esc(p.name)}</div>
+        <div class="parentPill ${p.meets ? "ok" : "bad"}">
+          ${p.meets ? "Meets 25+" : "Below 25"}
+        </div>
+      </div>
+
+      <div class="activityGrid">
+        <div class="activityKey">Employment hours</div><div class="activityVal">${esc(p.emp)}</div>
+        <div class="activityKey">Education hours</div><div class="activityVal">${esc(p.edu)}</div>
+        <div class="activityKey">Total hours</div><div class="activityVal">${esc(p.total)}</div>
+      </div>
+    </div>
+  `).join("");
+
+  const footer = `
+    <div class="activityNote">
+      Combined totals: Employment <b>${esc(b.employmentTotal)}</b>, Education <b>${esc(b.educationTotal)}</b>, Total <b>${esc(b.combinedTotal)}</b>.
+      ${b.minAcrossParents ? ` Minimum across parents: <b>${esc(b.minAcrossParents)}</b>.` : ""}
+    </div>
+  `;
+
+  return `
+    <div class="activityWrap">
+      <div class="activityHdr">
+        <div class="t">Parent Activity Hours Breakdown</div>
+        <div class="req">Requirement: <b>${esc(req)}</b> hrs/week per parent</div>
+      </div>
+      ${parentsHtml}
+      ${footer}
+    </div>
+  `;
+}
+
+function isActivityToken(token){
+  const t = (token || "").toLowerCase();
+  return t === "totalactivityhoursperweek" || t.indexOf("activity") >= 0;
+}
+
+function docMissingDetails(token){
+  if (!__facts) return "";
+  const t = String(token || "").toLowerCase();
+
+  if (t === "proofidentityprovided") {
+    const miss = String(__facts["docs.identity.missingNames"] || "").trim();
+    const cnt  = toNum(__facts["docs.identity.missingCount"]);
+    if (cnt > 0 && miss) return `Missing document for: ${miss}`;
+  }
+
+  if (t === "proofresidencyprovided") {
+    const miss = String(__facts["docs.residency.missingNames"] || "").trim();
+    const cnt  = toNum(__facts["docs.residency.missingCount"]);
+    const hasAddr = __facts["docs.residency.hasActiveAddress"];
+
+    const parts = [];
+    if (hasAddr === false || String(hasAddr).toLowerCase() === "false") {
+      parts.push("No active case address.");
+    }
+    if (cnt > 0 && miss) {
+      parts.push(`Missing document for: ${miss}`);
+    }
+    return parts.join(" ");
+  }
+
+  return "";
+}
+
+
+  function renderConditionLine(c){
+  const pass = !!c.pass;
+
+  let activityHtml = "";
+  if (!__activityRenderedOnce && __activityBreakdown && isActivityToken(c.token)) {
+    __activityRenderedOnce = true;
+    activityHtml = renderActivityBreakdown(__activityBreakdown);
+  }
+
+  const dynamicDetails = (!pass) ? docMissingDetails(c.token) : "";
+  const detailsText = c.details || dynamicDetails;
+
+  return `
+    <div class="cond">
+      <div class="condTop">
+        <div class="icon ${pass?"ok":"bad"}">${pass?"✓":"×"}</div>
+        <div>${esc(c.path || "")}</div>
+      </div>
+      <div class="condMain">${esc(formatConditionText(c))}</div>
+      ${detailsText ? `<div class="condKv"><b>Details:</b> ${esc(detailsText)}</div>` : ``}
+      ${activityHtml}
+    </div>
+  `;
+}
+
+
+
+  function renderGroupNode(node, depth){
+    const pass = boolVal(node.pass);
+    const label = node.label || node.id || "Group";
+    const op = (node.op || node.operator || "").toUpperCase();
+    const bodyId = "b_" + node.uid;
+
+    const childGroups = Array.isArray(node.groups) ? node.groups : [];
+    const childConds  = Array.isArray(node.conditions) ? node.conditions : [];
+
+    const childHtml =
+      childGroups.map(g => renderGroupNode(g, depth+1)).join("") +
+      childConds.map(c => renderConditionLine(c)).join("");
+
+    return `
+      <div class="accItem" style="margin-left:${Math.min(depth,4)*10}px">
+        <div class="accHead" data-body="${bodyId}">
+          <div class="accTitle">
+            <div class="chev" data-chev="${bodyId}">+</div>
+            <div class="accLabel">${esc(label)}${op ? `  (${op})` : ""}</div>
+          </div>
+          <div class="accMeta">
+            <div class="tag ${pass?"ok":"bad"}">${pass?"Pass":"Fail"}</div>
+          </div>
+        </div>
+        <div class="accBody" id="${bodyId}">
+          ${childHtml || `<div class="empty">No conditions in this group.</div>`}
+        </div>
+      </div>
+    `;
+  }
+
+  // Build a map from denialReasons (handles string OR object shape)
+  function buildDenialReasonMap(result){
+    const map = new Map();
+    const arr = Array.isArray(result.denialReasons) ? result.denialReasons : [];
+
+    arr.forEach(x => {
+      if (!x) return;
+
+      if (typeof x === "string") {
+        const key = x.trim().toLowerCase();
+        if (key) map.set(key, { reason: x.trim() });
+        return;
+      }
+
+      if (typeof x === "object") {
+        const id = (x.id || x.groupId || "").toString().trim().toLowerCase();
+        const label = (x.label || x.groupLabel || "").toString().trim().toLowerCase();
+        const reason = (x.reason || x.message || x.text || x.details || "").toString().trim();
+        const path = (x.path || "").toString().trim();
+
+        const payload = { id, label, reason, path };
+
+        if (id) map.set("id:" + id, payload);
+        if (label) map.set("label:" + label, payload);
+      }
+    });
+
+    return map;
+  }
+
+  // Get failed TOP-LEVEL groups only (prefer criteriaSummary; fallback to root groupEvals)
+  function getFailedTopGroups(result){
+    const out = [];
+
+    // 1) criteriaSummary (if plugin provides it)
+    const cs = Array.isArray(result.criteriaSummary) ? result.criteriaSummary : [];
+    if (cs.length) {
+      cs.forEach(g => {
+        const pass = boolVal(g && g.pass);
+        if (g && pass === false) {
+          out.push({
+            id: g.id || "",
+            label: g.label || g.name || "Question",
+            path: g.path || ""
+          });
+        }
+      });
+      return out;
+    }
+
+    // 2) fallback: root of groupEvals
+    const roots = Array.isArray(result.groupEvals) ? result.groupEvals : [];
+    roots.forEach(g => {
+      const pass = boolVal(g && g.pass);
+      if (g && pass === false) {
+        out.push({
+          id: g.id || "",
+          label: g.label || g.id || "Question",
+          path: g.path || ("ROOT > " + (g.label || g.id || "Question"))
+        });
+      }
+    });
+
+    return out;
+  }
+
+  // Count failed checks inside a group (used only as a fallback explanation)
+  function countFailedInside(node){
+    let n = 0;
+    const conds = Array.isArray(node.conditions) ? node.conditions : [];
+    conds.forEach(c => { if (c && boolVal(c.pass) === false) n++; });
+    const groups = Array.isArray(node.groups) ? node.groups : [];
+    groups.forEach(g => { n += countFailedInside(g); });
+    return n;
+  }
+
+  function findRootGroupByIdOrLabel(result, id, label){
+    const roots = Array.isArray(result.groupEvals) ? result.groupEvals : [];
+    const idKey = (id || "").toString().trim().toLowerCase();
+    const labelKey = (label || "").toString().trim().toLowerCase();
+    return roots.find(g => {
+      const gid = (g && g.id ? String(g.id) : "").trim().toLowerCase();
+      const glabel = (g && g.label ? String(g.label) : "").trim().toLowerCase();
+      return (idKey && gid === idKey) || (labelKey && glabel === labelKey);
+    }) || null;
+  }
+
+  function getTopGroupReason(result, denialMap, group){
+    const idKey = (group.id || "").toString().trim().toLowerCase();
+    const labelKey = (group.label || "").toString().trim().toLowerCase();
+
+    const hit =
+      (idKey && denialMap.get("id:" + idKey)) ||
+      (labelKey && denialMap.get("label:" + labelKey)) ||
+      null;
+
+    if (hit && hit.reason) return hit.reason;
+
+    // fallback: if root group object contains reason/details
+    const root = findRootGroupByIdOrLabel(result, group.id, group.label);
+    if (root) {
+      const r = (root.reason || root.details || "").toString().trim();
+      if (r) return r;
+
+      // last fallback: show a summary count (NOT the internal rules)
+      const failed = countFailedInside(root);
+      if (failed > 0) return failed + " check(s) failed inside this question.";
+    }
+
+    return "This eligibility question failed.";
+  }
+
+  (function init(){
+    const payload = getPayloadFromSession();
+    if(!payload){
+      document.getElementById("subtitle").innerText = "No result found.";
+      document.getElementById("statusPill").className = "pill bad";
+      document.getElementById("statusPill").innerText = "NOT ELIGIBLE";
+      document.getElementById("criteriaAccordion").innerHTML = `<div class="empty">No data available.</div>`;
+      return;
+    }
+
+    // Support wrapper shapes
+    let result = payload.resultJsonObj;
+    if (!result && typeof payload.resultJson === "string") result = safeJsonParse(payload.resultJson);
+    if (!result || typeof result !== "object") result = payload;
+
+    const isEligible = boolVal(
+      (payload.isEligible !== undefined ? payload.isEligible : undefined) ??
+      (payload.iseligible !== undefined ? payload.iseligible : undefined) ??
+      (result.isEligible !== undefined ? result.isEligible : undefined) ??
+      (result.iseligible !== undefined ? result.iseligible : undefined) ??
+      false
+    );
+
+    const message =
+      payload.resultMessage || payload.message || result.resultMessage || result.message || "";
+
+    // Header
+    const pill = document.getElementById("statusPill");
+    pill.className = "pill " + (isEligible ? "ok" : "bad");
+    pill.innerText = isEligible ? "ELIGIBLE" : "NOT ELIGIBLE";
+
+    const dot = document.getElementById("badgeDot");
+    dot.classList.toggle("ok", isEligible);
+    dot.innerText = isEligible ? "✓" : "!";
+
+    // Summary
+    const facts = result.facts || {};
+    __activityBreakdown = buildActivityBreakdownFromFacts(facts);
+    __facts = facts;
+
+
+    const sum = [];
+    const summaryFacts = Array.isArray(result.summaryFacts) ? result.summaryFacts : [];
+
+    if (summaryFacts.length > 0) {
+      summaryFacts.forEach(fact => {
+        if (fact && fact.label && fact.value !== null && fact.value !== undefined && String(fact.value).trim() !== "") {
+          addSummaryRow(sum, fact.label, fact.value);
+        }
+      });
+    }
+
+    if (sum.length === 0) {
+      if (facts["benefit.verifiedFlag"] !== undefined) addSummaryRow(sum, "Client Verified", String(facts["benefit.verifiedFlag"]));
+      if (facts.applicableincome !== undefined) addSummaryRow(sum, "Applicable income present", yesNo(facts.applicableincome));
+      if (facts.applicableexpense !== undefined) addSummaryRow(sum, "Applicable expense present", yesNo(facts.applicableexpense));
+      if (facts.yearlyincome !== undefined) addSummaryRow(sum, "Yearly eligible income", String(facts.yearlyincome));
+      if (facts.householdsizeadjusted !== undefined) addSummaryRow(sum, "Household size (adjusted)", String(facts.householdsizeadjusted));
+      if (facts.incomecategory !== undefined) addSummaryRow(sum, "Income category", String(facts.incomecategory));
+    }
+
+    // ---- Missing-doc summary rows (Rule 4 / Rule 5) ----
+const idMissing = String(facts["docs.identity.missingNames"] || "").trim();
+if (toNum(facts["docs.identity.missingCount"]) > 0 && idMissing) {
+  addSummaryRow(sum, "Missing proof of identity for", idMissing);
+}
+
+const resMissing = String(facts["docs.residency.missingNames"] || "").trim();
+const hasActiveAddr = facts["docs.residency.hasActiveAddress"];
+if (hasActiveAddr === false || String(hasActiveAddr).toLowerCase() === "false") {
+  addSummaryRow(sum, "Residency issue", "No active case address");
+}
+if (toNum(facts["docs.residency.missingCount"]) > 0 && resMissing) {
+  addSummaryRow(sum, "Missing proof of residency for", resMissing);
+}
+
+    document.getElementById("summaryRows").innerHTML =
+      sum.length ? sum.join("") : `<div class="empty">No summary facts found.</div>`;
+
+    // Denial Reasons (FAILED QUESTION GROUPS ONLY)
+    const denialSection = document.getElementById("denialSection");
+    const denialList = document.getElementById("denialList");
+    const denialHint = document.getElementById("denialHint");
+    const denyCountPill = document.getElementById("denyCountPill");
+
+    const denialMap = buildDenialReasonMap(result);
+    const failedTopGroups = (!isEligible) ? getFailedTopGroups(result) : [];
+
+    if (!isEligible && failedTopGroups.length > 0) {
+      denialSection.style.display = "block";
+      denialHint.innerText = `Showing ${failedTopGroups.length} failed question(s).`;
+      denyCountPill.textContent = failedTopGroups.length + " Failed";
+
+      denialList.innerHTML = failedTopGroups.map(g => {
+        const reason = getTopGroupReason(result, denialMap, g);
+        const path = g.path || ("ROOT > " + (g.label || "Question"));
+
+        return `
+          <div class="denyCard">
+            <div class="denyTop">
+              <div class="denyBadge">
+                <div class="denyX">×</div>
+                <div>
+                  <div class="denyQuestion">${esc(g.label || "Question")}</div>
+                </div>
+              </div>
+              <div class="denyTag">FAILED</div>
+            </div>
+
+            <div class="denyReason">${esc(reason)}</div>
+            <div class="denyPath">${esc(path)}</div>
+          </div>
+        `;
+      }).join("");
+    } else {
+      denialSection.style.display = "none";
+      denialList.innerHTML = "";
+      denialHint.innerText = "";
+      denyCountPill.textContent = "0 Failed";
+    }
+
+    // Subtitle: use failed question count (not internal rules)
+    document.getElementById("subtitle").innerText =
+      isEligible
+        ? "All required checks were satisfied."
+        : (failedTopGroups.length
+            ? (failedTopGroups.length + " question(s) failed.")
+            : (message || "Some checks need attention.")
+          );
+
+    // Criteria accordion
+    const groupEvals = Array.isArray(result.groupEvals) ? result.groupEvals : [];
+    if (!groupEvals.length) {
+      document.getElementById("criteriaHint").innerText = "";
+      document.getElementById("criteriaAccordion").innerHTML =
+        `<div class="empty">No group evaluation tree found (groupEvals).</div>`;
+    } else {
+      document.getElementById("criteriaHint").innerText =
+        "Click a rule/group to expand and see which part passed or failed.";
+
+      let uid = 1;
+      const normalized = JSON.parse(JSON.stringify(groupEvals));
+      const addUid = (n) => {
+        n.uid = (uid++);
+        (n.groups||[]).forEach(addUid);
+        (n.conditions||[]).forEach(c=>{ c.uid = (uid++); });
+      };
+      normalized.forEach(addUid);
+
+      document.getElementById("criteriaAccordion").innerHTML =
+        normalized.map(g => renderGroupNode(g, 0)).join("");
+    }
+
+    // expand/collapse (robust)
+    document.addEventListener("click", (e) => {
+      const root = document.getElementById("criteriaAccordion");
+      if (!root || !root.contains(e.target)) return;
+      const head = e.target && e.target.closest ? e.target.closest(".accHead") : null;
+      if (!head) return;
+      const bodyId = head.getAttribute("data-body");
+      const body = document.getElementById(bodyId);
+      if (!body) return;
+      body.classList.toggle("open");
+      const chev = head.querySelector(`[data-chev="${bodyId}"]`);
+      if (chev) chev.textContent = body.classList.contains("open") ? "−" : "+";
+    });
+
+    // Copy (copies parsed result object)
+    document.getElementById("copyBtn").addEventListener("click", async function(){
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(result, null, 2));
+        this.textContent = "Copied";
+        setTimeout(()=>this.textContent="Copy", 1200);
+      } catch(e){}
+    });
+
+    document.getElementById("okBtn").addEventListener("click", () => window.close());
+    window.addEventListener("keydown", e => { if(e.key==="Escape") window.close(); }, { once:false });
+  })();
+</script>
+</body>
+</html>
